@@ -12,9 +12,9 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.5)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.6)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v175.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v176.json"
 
 def load_reactive_cache():
     if os.path.exists(CACHE_FILE):
@@ -22,7 +22,6 @@ def load_reactive_cache():
             with open(CACHE_FILE, "r") as f:
                 cache_data = json.load(f)
                 loaded_stocks = cache_data.get("raw_stocks", [])
-                # Force refresh if old cache doesn't have YIELD
                 if loaded_stocks and isinstance(loaded_stocks, list):
                     if len(loaded_stocks) > 0 and "YIELD" not in loaded_stocks[0]:
                         return [], None
@@ -39,7 +38,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.5", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.6", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -49,10 +48,18 @@ st.markdown("""
     
     /* Background Onyx Black */
     [data-testid="stAppViewContainer"] { background-color: #050505 !important; color: #A1A1AA !important; }
-    [data-testid="stHeader"] { background: transparent !important; height: 0px !important; }
     
-    /* Extreme Mobile precision padding */
-    .block-container { padding-top: 0.5rem !important; padding-bottom: 1rem !important; max-width: 100% !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important;}
+    /* Header Streamlit dikembalikan transparan agar tidak tumpang tindih */
+    [data-testid="stHeader"] { background: transparent !important; }
+    
+    /* Extreme Mobile precision padding - Padding Atas Diperbesar agar Tab Aman (Fix 296757.jpg) */
+    .block-container { 
+        padding-top: 3.5rem !important; 
+        padding-bottom: 1rem !important; 
+        max-width: 100% !important; 
+        padding-left: 0.5rem !important; 
+        padding-right: 0.5rem !important;
+    }
     
     /* Ultra-Narrow Sidebar Luxury */
     section[data-testid="stSidebar"] { 
@@ -62,6 +69,19 @@ st.markdown("""
         max-width: 180px !important;
     }
     section[data-testid="stSidebar"] * { color: #A1A1AA !important; }
+    
+    /* Styling Dropdown (Selectbox) agar lebih elegan dan smooth di HP */
+    div[data-baseweb="select"] > div {
+        background-color: #09090B !important;
+        border: 1px solid #27272A !important;
+        border-radius: 8px !important;
+        padding: 4px !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #FAFAFA !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
     
     /* Elegant Cards */
     .pro-card { 
@@ -238,7 +258,6 @@ def fetch_single_stock(emiten, mode_tf):
         tkr = yf.Ticker(emiten)
         info = tkr.info if tkr.info else {}
         
-        # New Fundamental Fetches for Clustering
         div_yield = round(info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0, 2)
         market_cap = info.get('marketCap', 0)
         
@@ -259,7 +278,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.5</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.6</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -307,7 +326,8 @@ else:
     # TAB 1: LUXURY DASHBOARD
     # ------------------------------------------
     with tab_dash:
-        pilihan_ticker = st.selectbox("🔍 Cari Emiten", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
+        st.markdown("<div style='font-size:10px; color:#71717A; font-weight:700; margin-bottom:5px; text-transform:uppercase;'>🔍 Cari Emiten</div>", unsafe_allow_html=True)
+        pilihan_ticker = st.selectbox("Pilih", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
         s = next((item for item in st.session_state.raw_stocks if item.get("TICKER") == pilihan_ticker), None)
         
         if s:
@@ -334,7 +354,7 @@ else:
 <div style="display:flex; align-items:center;">
 <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
 <div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.5</span></div>
+<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.6</span></div>
 <div class="ticker-desc">{s.get('NAME', '')}</div>
 </div>
 </div>
