@@ -8,14 +8,13 @@ import warnings
 import gc
 import json
 import os
-import io
 
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. SISTEM CACHE & TRACKING (UPGRADED V17.1)
+# 0. SISTEM CACHE & TRACKING (UPGRADED V17.3)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v171.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v173.json"
 
 def load_smart_cache():
     if os.path.exists(CACHE_FILE):
@@ -24,7 +23,6 @@ def load_smart_cache():
                 cache_data = json.load(f)
                 loaded_stocks = cache_data.get("raw_stocks", [])
                 if loaded_stocks and isinstance(loaded_stocks, list):
-                    # Validasi cache ketat: Pastikan key baru (ATR_PCT) ada
                     if len(loaded_stocks) > 0 and "ATR_PCT" not in loaded_stocks[0]:
                         return [], None
                 return loaded_stocks, cache_data.get("last_update", None)
@@ -40,28 +38,20 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. KONFIGURASI HALAMAN & UI STOCKS.LY STYLE
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.1", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.3", page_icon="⚡", layout="wide")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     
-    /* Global App Background & Font */
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     [data-testid="stAppViewContainer"] { background-color: #0B0E14 !important; color: #8B98A9 !important; }
     [data-testid="stHeader"] { background: transparent !important; }
     
-    /* Layout */
     .block-container { padding-top: 1.5rem !important; max-width: 95% !important; }
     
-    /* Sidebar Styling */
     section[data-testid="stSidebar"] { background-color: #0F131C !important; border-right: 1px solid #1E2638; }
     section[data-testid="stSidebar"] * { color: #8B98A9 !important; }
-    
-    /* Dashboard Cards Style (Like the Image) */
-    .dashboard-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
-    .row-flex { display: flex; gap: 15px; }
-    .col-flex { flex: 1; display: flex; flex-direction: column; gap: 15px; }
     
     .pro-card { 
         background-color: #121722; 
@@ -69,45 +59,46 @@ st.markdown("""
         border-radius: 16px; 
         padding: 24px; 
         box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        margin-bottom: 15px;
     }
     
-    /* Card Headers */
     .card-label { color: #8B98A9; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
     
-    /* Header Profile Card */
     .header-profile { display: flex; justify-content: space-between; align-items: center; }
     .logo-circle { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: 900; color: white; margin-right: 20px;}
     .ticker-title { font-size: 36px; font-weight: 900; color: #FFFFFF; line-height: 1.1; display:flex; align-items:center; gap: 10px;}
     .ticker-desc { color: #8B98A9; font-size: 14px; font-weight: 500; margin-top: 4px; }
     
-    /* Badges */
     .badge-primary { background: rgba(59, 130, 246, 0.15); color: #3B82F6; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
     .badge-green { background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);}
     .badge-red { background: rgba(239, 68, 68, 0.15); color: #EF4444; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);}
-    .badge-yellow { background: rgba(245, 158, 11, 0.15); color: #F59E0B; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(245, 158, 11, 0.3);}
     
-    /* Score Box */
     .score-box { background: #0B0E14; border: 1px solid #1E2638; border-radius: 12px; padding: 15px 25px; text-align: center; }
     .score-value { font-size: 32px; font-weight: 900; color: #FFFFFF; line-height: 1; margin: 5px 0;}
     
-    /* Warning Banner */
-    .warning-banner { background-color: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 16px; margin-top: 15px; color: #F59E0B; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;}
+    .warning-banner { background-color: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 16px; margin-top: 15px; margin-bottom: 20px; color: #F59E0B; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;}
     
-    /* Data Points */
-    .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px;}
+    .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;}
     .data-point span { display: block; }
     .data-label { font-size: 11px; color: #8B98A9; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;}
     .data-value { font-size: 18px; color: #FFFFFF; font-weight: 800;}
     
-    /* Progress Bar custom */
     .meter-container { background: #1E2638; height: 8px; border-radius: 4px; margin-top: 25px; position: relative;}
     .meter-fill { background: linear-gradient(90deg, #EF4444 0%, #10B981 100%); height: 100%; border-radius: 4px;}
     .meter-labels { display: flex; justify-content: space-between; font-size: 11px; color: #8B98A9; font-weight: 600; margin-top: 8px;}
     
-    /* Streamlit Tabs Customization */
     .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #1E2638; gap: 20px;}
     .stTabs [data-baseweb="tab"] { color: #8B98A9; font-weight: 600; background: transparent; padding: 10px 0; border: none;}
     .stTabs [aria-selected="true"] { color: #3B82F6; border-bottom: 2px solid #3B82F6;}
+    
+    @media (max-width: 768px) {
+        .header-profile { flex-direction: column; text-align: center; gap: 15px; }
+        .logo-circle { margin: 0 auto; }
+        .ticker-title { justify-content: center; flex-wrap: wrap; }
+        .data-grid { grid-template-columns: 1fr !important; gap: 10px;}
+        .score-box { width: 100%; }
+        .badge-green, .badge-red { display: inline-block; margin-bottom: 5px; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -196,8 +187,8 @@ def fetch_single_stock(emiten, mode_tf):
         body_size, lower_shadow = abs(open_skg - harga_skg), (open_skg if is_bullish else harga_skg) - low_skg
         is_whale_absorption = (vol_skg > vol_sma20 * 1.3) and (lower_shadow > body_size * 1.5) and is_near_bottom
 
-        if has_bullish_div and is_near_bottom: serok_signal = "🎯 BULLISH DIVERGENCE (JACKPOT)"
-        elif is_whale_absorption: serok_signal = "🐋 WHALE BOTTOM ABSORPTION"
+        if has_bullish_div and is_near_bottom: serok_signal = "🎯 BULLISH DIVERGENCE"
+        elif is_whale_absorption: serok_signal = "🐋 WHALE ABSORPTION"
         elif (float(df['Stoch_K'].iloc[-1]) < 30) and (float(df['Stoch_K'].iloc[-1]) > float(df['Stoch_D'].iloc[-1])) and is_near_bottom: serok_signal = "🟢 OVERSOLD REBOUND"
         else: serok_signal = "➖ TDK ADA SEROK"
 
@@ -240,7 +231,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color: #FFFFFF; font-size: 22px; font-weight: 900; margin-bottom: 0px;'>⚡ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #8B98A9; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 30px;'>QUANTUM MATRIX V17.1</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #8B98A9; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 30px;'>QUANTUM MATRIX V17.3</p>", unsafe_allow_html=True)
     
     tf_pilihan = st.selectbox("⏱️ Timeframe Analisis:", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0)
     
@@ -270,209 +261,183 @@ with st.sidebar:
 if not st.session_state.raw_stocks:
     st.info("👈 Tekan tombol '🔄 JALANKAN SCAN ENGINE' di sidebar untuk memulai scanning data baru.")
 else:
-    tab_dash, tab_table = st.tabs(["⚡ SINGLE STOCK DASHBOARD", "🗄️ DATABASE TABEL (300 EMITEN)"])
+    tab_dash, tab_table = st.tabs(["⚡ SINGLE STOCK DASHBOARD", "🗄️ DATABASE TABEL"])
     
     with tab_dash:
         col_search, _ = st.columns([1, 2])
         with col_search:
-            pilihan_ticker = st.selectbox("🔍 Cari Emiten (Ketik kode saham)", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
+            pilihan_ticker = st.selectbox("🔍 Cari Emiten", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
         
-        # Ambil data spesifik dari ticker yang dipilih
         s = next((item for item in st.session_state.raw_stocks if item.get("TICKER") == pilihan_ticker), None)
         
         if s:
-            # Proteksi KeyError menggunakan .get() dengan default value
             grade = s.get("SETUP_GRADE", "WAIT")
             atr_pct = s.get('ATR_PCT', 0)
             volatility_badge = "HIGH" if atr_pct > 4 else "NORMAL"
             vol_color_class = "badge-red" if atr_pct > 4 else "badge-green"
             
             if "JACKPOT" in grade or "A+" in grade:
-                action_text = "BUY / ACCUMULATE"
-                action_color = "#10B981"
-                action_bg = "rgba(16, 185, 129, 0.1)"
+                action_text, action_color, action_bg = "BUY / ACCUMULATE", "#10B981", "rgba(16, 185, 129, 0.1)"
             elif "WAIT" in grade:
-                action_text = "WAIT / WATCHLIST"
-                action_color = "#F59E0B"
-                action_bg = "rgba(245, 158, 11, 0.1)"
+                action_text, action_color, action_bg = "WAIT / WATCHLIST", "#F59E0B", "rgba(245, 158, 11, 0.1)"
             else:
-                action_text = "SPECULATIVE BUY"
-                action_color = "#3B82F6"
-                action_bg = "rgba(59, 130, 246, 0.1)"
+                action_text, action_color, action_bg = "SPECULATIVE BUY", "#3B82F6", "rgba(59, 130, 246, 0.1)"
                 
-            vol = s.get('VOLUME', 0)
-            vol_sma = s.get('VOL_SMA20', 1) # Prevent div by zero
+            vol, vol_sma = s.get('VOLUME', 0), s.get('VOL_SMA20', 1)
             status_bandar = s.get('STATUS_BANDAR', 'NEUTRAL')
             serok_sig = s.get('SEROK_SIGNAL', '➖ TDK ADA').split()[0]
-            harga = s.get('HARGA', 0)
-            ma20 = s.get('MA20', 0)
-            ma50 = s.get('MA50', 0)
+            harga, ma20, ma50 = s.get('HARGA', 0), s.get('MA20', 0), s.get('MA50', 0)
             
             # --- CARD 1: HEADER ---
             st.markdown(f"""
-            <div class="pro-card">
-                <div class="header-profile">
-                    <div style="display:flex; align-items:center;">
-                        <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
-                        <div>
-                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">⚡ V17.1 ANALYTICS</span></div>
-                            <div class="ticker-desc">{s.get('NAME', '')}</div>
-                        </div>
-                    </div>
-                    <div class="score-box">
-                        <div style="font-size:10px; color:#8B98A9; letter-spacing:1px; text-transform:uppercase;">WPI Score (Whale)</div>
-                        <div class="score-value">{s.get('WPI_SCORE', 0):.2f}</div>
-                        <div style="font-size:10px; color:#10B981;">Berdasarkan tekanan volume akhir</div>
-                    </div>
-                </div>
+<div class="pro-card">
+    <div class="header-profile">
+        <div style="display:flex; align-items:center;">
+            <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
+            <div>
+                <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">⚡ V17.3 REACTIVE</span></div>
+                <div class="ticker-desc">{s.get('NAME', '')}</div>
             </div>
-            
-            <div class="warning-banner">
-                <span style="font-size:16px;">⚠️</span> 
-                MARKET MASIH BERJALAN. Analisis terbaik dilakukan saat bursa tutup (pukul 16:00 WIB) untuk mendapatkan data candle konfirmasi penutupan yang valid.
-            </div>
-            """, unsafe_allow_html=True)
+        </div>
+        <div class="score-box">
+            <div style="font-size:10px; color:#8B98A9; letter-spacing:1px; text-transform:uppercase;">WPI Score</div>
+            <div class="score-value">{s.get('WPI_SCORE', 0):.2f}</div>
+            <div style="font-size:10px; color:#10B981;">Tekanan Volume Akhir</div>
+        </div>
+    </div>
+</div>
+
+<div class="warning-banner">
+    <span style="font-size:16px;">⚠️</span> 
+    MARKET MASIH BERJALAN. Analisis terbaik dilakukan saat bursa tutup (pukul 16:00 WIB).
+</div>
+""", unsafe_allow_html=True)
             
             # --- DASHBOARD GRID ---
-            st.markdown('<div class="dashboard-grid"><div class="row-flex">', unsafe_allow_html=True)
-            
             col1, col2 = st.columns([1.5, 1])
             
             with col1:
-                # CARD 2: RINGKASAN STRATEGI
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">⚡ RINGKASAN STRATEGI</div>
-                    <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #1E2638; padding-bottom: 15px;">
-                        <div>
-                            <div class="data-label">FUNDAMENTAL</div>
-                            <div class="data-value" style="font-size:14px;">ROE <span style="color:#10B981;">{s.get('ROE', 0)}%</span> &nbsp;|&nbsp; PER <span style="color:#10B981;">{s.get('PER', 0)}x</span></div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div class="data-label">BANDAR FLOW</div>
-                            <div class="data-value" style="color: {'#10B981' if 'AKUMULASI' in status_bandar else '#F59E0B' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="meter-container">
-                        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
-                    </div>
-                    <div class="meter-labels">
-                        <span>EXTREME BEARISH</span>
-                        <span>NEUTRAL</span>
-                        <span>EXTREME BULLISH</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="pro-card" style="height:100%;">
+    <div class="card-label">⚡ RINGKASAN STRATEGI</div>
+    <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #1E2638; padding-bottom: 15px;">
+        <div>
+            <div class="data-label">FUNDAMENTAL</div>
+            <div class="data-value" style="font-size:14px;">ROE <span style="color:#10B981;">{s.get('ROE', 0)}%</span> &nbsp;|&nbsp; PER <span style="color:#10B981;">{s.get('PER', 0)}x</span></div>
+        </div>
+        <div style="text-align:right;">
+            <div class="data-label">BANDAR FLOW</div>
+            <div class="data-value" style="color: {'#10B981' if 'AKUMULASI' in status_bandar else '#F59E0B' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</div>
+        </div>
+    </div>
+    
+    <div class="meter-container">
+        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
+    </div>
+    <div class="meter-labels">
+        <span>BEARISH</span>
+        <span>NEUTRAL</span>
+        <span>BULLISH</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
                 
             with col2:
-                # CARD 3: VOLUME & DANA ASING
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">🌐 SMART MONEY ZONE</div>
-                    <div style="text-align:center; margin: 15px 0;">
-                        <div style="font-size:32px; font-weight:900; color:{'#10B981' if vol > vol_sma else '#EF4444'};">
-                            {vol/1000000:.1f}M
-                        </div>
-                        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:5px;">
-                            {'VOLUME SPIKE DETECTED' if vol > vol_sma else 'VOLUME DRY / SEPI'}
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-top:15px; border-top: 1px solid #1E2638; padding-top:10px;">
-                        <span style="color:#10B981;">AVG VOL: {vol_sma/1000000:.1f}M</span>
-                        <span style="color:#EF4444;">SEROK: {serok_sig}</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="pro-card" style="height:100%;">
+    <div class="card-label">🌐 SMART MONEY ZONE</div>
+    <div style="text-align:center; margin: 15px 0;">
+        <div style="font-size:32px; font-weight:900; color:{'#10B981' if vol > vol_sma else '#EF4444'};">
+            {vol/1000000:.1f}M
+        </div>
+        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:5px;">
+            {'VOLUME SPIKE DETECTED' if vol > vol_sma else 'VOLUME DRY / SEPI'}
+        </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-top:15px; border-top: 1px solid #1E2638; padding-top:10px;">
+        <span style="color:#10B981;">AVG: {vol_sma/1000000:.1f}M</span>
+        <span style="color:#EF4444;">SIG: {serok_sig}</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
                 
-            st.markdown('</div><div class="row-flex">', unsafe_allow_html=True)
             col3, col4 = st.columns([1.5, 1])
             
             with col3:
-                # CARD 4: KONDISI HARGA
                 cond_price = "badge-green" if harga > ma20 else "badge-red"
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
                 
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">📈 KONDISI HARGA SAAT INI</div>
-                    <div class="data-grid" style="grid-template-columns: repeat(3, 1fr);">
-                        <div class="data-point">
-                            <span class="data-label">LAST PRICE</span>
-                            <span class="data-value">{int(harga):,}</span>
-                        </div>
-                        <div class="data-point">
-                            <span class="data-label">VOLATILITY</span>
-                            <span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge} <span style="font-size:12px; color:#8B98A9;">{atr_pct:.1f}% ATR</span></span>
-                        </div>
-                        <div class="data-point">
-                            <span class="data-label">MA20 (EMA)</span>
-                            <span class="data-value">{int(ma20):,}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:25px; display:flex; gap:10px; flex-wrap:wrap;">
-                        <span class="{cond_price}">• PRICE > MA20</span>
-                        <span class="{cond_ma}">• MA20 > MA50</span>
-                        <span class="{vol_color_class}">• VOLATILITY (ATR)</span>
-                        <span class="{'badge-green' if vol > vol_sma else 'badge-red'}">• LIQUIDITY OK</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="pro-card" style="height:100%;">
+    <div class="card-label">📈 KONDISI HARGA SAAT INI</div>
+    <div class="data-grid">
+        <div class="data-point">
+            <span class="data-label">LAST PRICE</span>
+            <span class="data-value">{int(harga):,}</span>
+        </div>
+        <div class="data-point">
+            <span class="data-label">VOLATILITY</span>
+            <span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge} <span style="font-size:12px; color:#8B98A9;">{atr_pct:.1f}% ATR</span></span>
+        </div>
+        <div class="data-point">
+            <span class="data-label">MA20 (EMA)</span>
+            <span class="data-value">{int(ma20):,}</span>
+        </div>
+    </div>
+    
+    <div style="margin-top:25px; display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="{cond_price}">• PRICE > MA20</span>
+        <span class="{cond_ma}">• MA20 > MA50</span>
+        <span class="{vol_color_class}">• VOLATILITY (ATR)</span>
+        <span class="{'badge-green' if vol > vol_sma else 'badge-red'}">• LIQUIDITY OK</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
                 
             with col4:
-                # CARD 5: ENTRY AREA
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
-                    <div class="card-label" style="justify-content:center;">🎯 ENTRY AREA</div>
-                    <div style="font-size:28px; font-weight:900; color:#FFFFFF; margin:10px 0;">
-                        {int(s.get('AREA BELI', 0)):,}
-                    </div>
-                    <div style="color:#8B98A9; font-size:12px;">Area toleransi koreksi sehat (MA20/Support) untuk cicil masuk.</div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+    <div class="card-label" style="justify-content:center;">🎯 ENTRY AREA</div>
+    <div style="font-size:28px; font-weight:900; color:#FFFFFF; margin:10px 0;">
+        {int(s.get('AREA BELI', 0)):,}
+    </div>
+    <div style="color:#8B98A9; font-size:12px;">Area toleransi koreksi sehat (MA20/Support) untuk cicil masuk.</div>
+</div>
+""", unsafe_allow_html=True)
                 
-            st.markdown('</div><div class="row-flex">', unsafe_allow_html=True)
             col5, col6 = st.columns([1.5, 1])
             
             with col5:
-                # CARD 6: KEPUTUSAN STRATEGI
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">🛡️ KEPUTUSAN STRATEGI</div>
-                    
-                    <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 15px;">
-                        <div style="font-size:11px; color:#8B98A9; text-transform:uppercase; font-weight:700; margin-bottom:5px;">RECOMMENDED ACTION</div>
-                        <div style="color: {action_color}; font-size: 24px; font-weight: 900; letter-spacing: 1px;">{action_text}</div>
-                    </div>
-                    
-                    <div style="color:#8B98A9; font-size:13px; line-height:1.5;">
-                        Status sistem: <b>{grade}</b>. Pastikan untuk selalu memantau ledakan volume di jam bursa. Jika terjadi distribusi di area pucuk, segera amankan profit.
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div class="pro-card" style="height:100%;">
+    <div class="card-label">🛡️ KEPUTUSAN STRATEGI</div>
+    
+    <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 15px;">
+        <div style="font-size:11px; color:#8B98A9; text-transform:uppercase; font-weight:700; margin-bottom:5px;">RECOMMENDED ACTION</div>
+        <div style="color: {action_color}; font-size: 24px; font-weight: 900; letter-spacing: 1px;">{action_text}</div>
+    </div>
+    
+    <div style="color:#8B98A9; font-size:13px; line-height:1.5;">
+        Status sistem: <b>{grade}</b>. Pastikan memantau ledakan volume di jam bursa. Jika terjadi distribusi di pucuk, segera amankan profit.
+    </div>
+</div>
+""", unsafe_allow_html=True)
                 
             with col6:
-                # CARD 7: MANAJEMEN RISIKO (TRAILING STOP)
                 st.markdown(f"""
-                <div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
-                    <div class="card-label" style="justify-content:center;">🚨 MANAJEMEN RISIKO</div>
-                    <div style="font-size:28px; font-weight:900; color:#EF4444; margin:10px 0;">
-                        {int(s.get('TRAILING STOP', 0)):,}
-                    </div>
-                    <div style="color:#8B98A9; font-size:12px;">Cutloss / Trailing Stop otomatis berdasarkan Algoritma Chandelier Exit (ATR).</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            st.markdown('</div></div>', unsafe_allow_html=True)
+<div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+    <div class="card-label" style="justify-content:center;">🚨 MANAJEMEN RISIKO</div>
+    <div style="font-size:28px; font-weight:900; color:#EF4444; margin:10px 0;">
+        {int(s.get('TRAILING STOP', 0)):,}
+    </div>
+    <div style="color:#8B98A9; font-size:12px;">Cutloss / Trailing Stop otomatis berdasarkan Algoritma Chandelier Exit.</div>
+</div>
+""", unsafe_allow_html=True)
 
     with tab_table:
         st.markdown("<h3 style='color:#FFFFFF;'>🗄️ Database Analisis Massal</h3>", unsafe_allow_html=True)
-        # Menampilkan format DataFrame asli
         df_display = pd.DataFrame(st.session_state.raw_stocks)
         if not df_display.empty:
-            # Handle key checking just in case
             cols_to_show = ['TICKER', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'STATUS_BANDAR', 'SEROK_SIGNAL', 'WPI_SCORE']
             valid_cols = [c for c in cols_to_show if c in df_display.columns]
-            df_display = df_display[valid_cols]
-            st.dataframe(df_display, use_container_width=True, height=500)
+            st.dataframe(df_display[valid_cols], use_container_width=True, height=500)
