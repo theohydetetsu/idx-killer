@@ -12,9 +12,9 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.6)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.7)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v176.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v177.json"
 
 def load_reactive_cache():
     if os.path.exists(CACHE_FILE):
@@ -23,9 +23,7 @@ def load_reactive_cache():
                 cache_data = json.load(f)
                 loaded_stocks = cache_data.get("raw_stocks", [])
                 if loaded_stocks and isinstance(loaded_stocks, list):
-                    if len(loaded_stocks) > 0 and "YIELD" not in loaded_stocks[0]:
-                        return [], None
-                return loaded_stocks, cache_data.get("last_update", None)
+                    return loaded_stocks, cache_data.get("last_update", None)
         except: pass
     return [], None
 
@@ -38,7 +36,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.6", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.7", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -48,11 +46,9 @@ st.markdown("""
     
     /* Background Onyx Black */
     [data-testid="stAppViewContainer"] { background-color: #050505 !important; color: #A1A1AA !important; }
-    
-    /* Header Streamlit dikembalikan transparan agar tidak tumpang tindih */
     [data-testid="stHeader"] { background: transparent !important; }
     
-    /* Extreme Mobile precision padding - Padding Atas Diperbesar agar Tab Aman (Fix 296757.jpg) */
+    /* Extreme Mobile precision padding */
     .block-container { 
         padding-top: 3.5rem !important; 
         padding-bottom: 1rem !important; 
@@ -70,7 +66,7 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] * { color: #A1A1AA !important; }
     
-    /* Styling Dropdown (Selectbox) agar lebih elegan dan smooth di HP */
+    /* Styling Dropdown */
     div[data-baseweb="select"] > div {
         background-color: #09090B !important;
         border: 1px solid #27272A !important;
@@ -122,7 +118,6 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] { color: #71717A; font-weight: 600; background: transparent; padding: 8px 10px; border: none; font-size:12px;}
     .stTabs [aria-selected="true"] { color: #C6A87C; border-bottom: 2px solid #C6A87C;}
     
-    /* Content Formatting for SOP */
     .sop-box { background: #09090B; border-left: 3px solid #C6A87C; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #D4D4D8; line-height:1.6;}
     .sop-title { color: #C6A87C; font-weight: 700; font-size: 14px; margin-bottom: 8px; text-transform: uppercase;}
     
@@ -258,7 +253,15 @@ def fetch_single_stock(emiten, mode_tf):
         tkr = yf.Ticker(emiten)
         info = tkr.info if tkr.info else {}
         
-        div_yield = round(info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0, 2)
+        # FIX LOGIC DIVIDEND YIELD AGAR NORMAL & PRESISI (Menghindari nilai ribuan)
+        raw_yield = info.get('dividendYield', 0)
+        if raw_yield is None:
+            div_yield = 0.0
+        elif raw_yield > 1.0: 
+            div_yield = round(raw_yield, 2)
+        else:
+            div_yield = round(raw_yield * 100, 2)
+            
         market_cap = info.get('marketCap', 0)
         
         return {
@@ -267,7 +270,7 @@ def fetch_single_stock(emiten, mode_tf):
             "TRAILING STOP": trailing_stop, "WPI_SCORE": round(wpi_score, 1),
             "SEROK_SIGNAL": serok_signal, "STATUS_BANDAR": status_bandar, "SETUP_GRADE": setup_grade, 
             "PER": round(info.get('trailingPE', 0.0), 2), "ROE": round(info.get('returnOnEquity', 0) * 100 if info.get('returnOnEquity') else 0, 2),
-            "YIELD": div_yield, "MCAP": market_cap,
+            "YIELD": f"{div_yield}%", "YIELD_RAW": div_yield, "MCAP": market_cap,
             "RET_1D": ((harga_skg - prev_close) / prev_close * 100), "VOLUME": vol_skg, "VOL_SMA20": vol_sma20, 
             "ATR_PCT": (float(df['ATR'].iloc[-1]) / harga_skg) * 100, "NAME": info.get('longName', kode)
         }
@@ -278,7 +281,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.6</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.7</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -334,7 +337,6 @@ else:
             grade = s.get("SETUP_GRADE", "WAIT")
             atr_pct = s.get('ATR_PCT', 0)
             volatility_badge = "HIGH" if atr_pct > 4 else "NORMAL"
-            vol_color_class = "badge-red" if atr_pct > 4 else "badge-green"
             
             if "JACKPOT" in grade or "A+" in grade:
                 action_text, action_color, action_bg = "BUY / ACCUMULATE", "#10B981", "rgba(16, 185, 129, 0.1)"
@@ -354,7 +356,7 @@ else:
 <div style="display:flex; align-items:center;">
 <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
 <div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.6</span></div>
+<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.7</span></div>
 <div class="ticker-desc">{s.get('NAME', '')}</div>
 </div>
 </div>
@@ -375,7 +377,7 @@ else:
 <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
 <div>
 <span class="data-label">FUNDAMENTAL</span>
-<span class="data-value">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', 0)}%</span></span>
+<span class="data-value">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
 </div>
 <div style="text-align:right;">
 <span class="data-label">BANDAR FLOW</span>
@@ -465,12 +467,11 @@ SIG: {serok_sig}
                 st.markdown(html_col6, unsafe_allow_html=True)
 
     # ------------------------------------------
-    # TAB 2: CLUSTERING OTOMATIS (PENGGANTI DATABASE)
+    # TAB 2: CLUSTERING OTOMATIS
     # ------------------------------------------
     with tab_cluster:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>🎯 Kategori Pilihan Engine</h4>", unsafe_allow_html=True)
         
-        # Filter Logic
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         
         # 1. Cluster Serok Bawah
@@ -481,10 +482,10 @@ SIG: {serok_sig}
         else:
             st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum ada saham yang masuk kriteria Serok Bawah saat ini.</div>", unsafe_allow_html=True)
             
-        # 2. Cluster Dividend Investing
-        if 'YIELD' in df_all.columns:
-            df_div = df_all[df_all['YIELD'] >= 4.0].sort_values(by='YIELD', ascending=False)
-            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 CLUSTER: Dividend Investing (Yield > 4%)</div>", unsafe_allow_html=True)
+        # 2. Cluster Dividend Investing (Menggunakan YIELD_RAW yang sudah ternormalisasi > 2%)
+        if 'YIELD_RAW' in df_all.columns:
+            df_div = df_all[df_all['YIELD_RAW'] >= 2.0].sort_values(by='YIELD_RAW', ascending=False)
+            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 CLUSTER: Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
             if not df_div.empty:
                 st.dataframe(df_div[['TICKER', 'HARGA', 'YIELD', 'ROE', 'PER']], hide_index=True, use_container_width=True)
             else:
