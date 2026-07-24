@@ -61,8 +61,8 @@ st.markdown("""
     section[data-testid="stSidebar"] { 
         background-color: #09090B !important; 
         border-right: 1px solid #1F1F22 !important; 
-        min-width: 180px !important; 
-        max-width: 180px !important;
+        min-width: 160px !important; 
+        max-width: 160px !important;
     }
     section[data-testid="stSidebar"] * { color: #A1A1AA !important; }
     
