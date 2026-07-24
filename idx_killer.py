@@ -13,9 +13,9 @@ import io
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. SISTEM CACHE & TRACKING (UPGRADED V17.0)
+# 0. SISTEM CACHE & TRACKING (UPGRADED V17.1)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v170.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v171.json"
 
 def load_smart_cache():
     if os.path.exists(CACHE_FILE):
@@ -24,7 +24,8 @@ def load_smart_cache():
                 cache_data = json.load(f)
                 loaded_stocks = cache_data.get("raw_stocks", [])
                 if loaded_stocks and isinstance(loaded_stocks, list):
-                    if "SEROK_SIGNAL" not in loaded_stocks[0]:
+                    # Validasi cache ketat: Pastikan key baru (ATR_PCT) ada
+                    if len(loaded_stocks) > 0 and "ATR_PCT" not in loaded_stocks[0]:
                         return [], None
                 return loaded_stocks, cache_data.get("last_update", None)
         except: pass
@@ -39,7 +40,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. KONFIGURASI HALAMAN & UI STOCKS.LY STYLE
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.0", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.1", page_icon="⚡", layout="wide")
 
 st.markdown("""
 <style>
@@ -103,10 +104,6 @@ st.markdown("""
     .meter-fill { background: linear-gradient(90deg, #EF4444 0%, #10B981 100%); height: 100%; border-radius: 4px;}
     .meter-labels { display: flex; justify-content: space-between; font-size: 11px; color: #8B98A9; font-weight: 600; margin-top: 8px;}
     
-    /* Decision Box */
-    .decision-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 15px;}
-    .decision-text { color: #F59E0B; font-size: 20px; font-weight: 900; letter-spacing: 1px; margin:0;}
-    
     /* Streamlit Tabs Customization */
     .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #1E2638; gap: 20px;}
     .stTabs [data-baseweb="tab"] { color: #8B98A9; font-weight: 600; background: transparent; padding: 10px 0; border: none;}
@@ -117,21 +114,10 @@ st.markdown("""
 # ==========================================
 # 2. CORE ENGINE DATA FETCHING & INDICATORS
 # ==========================================
-# (Mempertahankan logika aslimu utuh agar performa AI tetap tajam)
 MASTER_UNIVERSE = ["BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "UNTR", "ICBP", "INDF", "AMRT", "GOTO", "PGAS", "PTBA", "ITMG", "KLBF", "ADRO", "UNVR", "BRIS", "CPIN", "ANTM", "AMMN", "BREN", "CUAN", "PANI", "BRPT", "MDKA", "MEDC", "ARTO", "SIDO", "MYOR", "INKP", "TKIM", "SMGR", "INTP", "BFIN", "AKRA", "ESSA", "EXCL", "ISAT", "TOWR", "TBIG", "MTEL", "MAPI", "MAPA", "ACES", "ERAA", "AUTO", "NISP", "BDMN", "BTPS", "BBTN", "BNGA", "BRMS", "BUMI", "ENRG", "DEWA", "DOID", "HRUM", "INCO", "PTMP", "VKTR", "GGRM", "HMSP", "WIIM", "JSMR", "WIKA", "PTPP", "ADHI", "SMRA", "BSDE", "CTRA", "PWON", "ASRI", "SSIA", "SRTG", "BMTR", "MNCN", "EMTK", "SCMA", "BUAH", "CLEO", "CMRY", "SILO", "MIKA", "HEAL", "TPIA", "MBMA", "NCKL", "PGEO", "AVIA", "ARNA", "MARK", "INAF", "KAEF", "WOOD", "TAPG", "DSNG", "LSIP", "AALI", "SSMS", "BBYB", "AGRO", "ARKA", "BABP", "BACA", "BGTG", "BHIT", "BIPI", "BKDP", "BVIC", "CARE", "CARS", "CASS", "CBEZ", "CEKA", "CENT", "CFIN", "CINT", "CMNP", "COAL", "DANG", "DART", "DILD", "DKFT", "DMAS", "DSSA", "EAST", "ELSA", "EMDE", "EPMT", "FAST", "FPNI", "FREN", "GJTL", "GLOB", "GZCO", "HOKI", "HOME", "IATA", "IBST", "IGAR", "IMAS", "INPC", "IPCC", "IPCM", "IPTV", "IRRA", "JAWA", "JECC", "JPFA", "KBLI", "KBLV", "KIJA", "KINO", "KPIG", "KRAS", "LINK", "LPCK", "LPKR", "LPPF", "MAIN", "MALA", "MARI", "MBSS", "MCOL", "MDLN", "MGRO", "MICE", "MLBI", "MLIA", "MLPL", "MLPT", "MPMX", "MTDL", "MTLA", "NELY", "NRCA", "OBMD", "OASA", "OMRE", "PANS", "PBRX", "PGLI", "PNBN", "PNBS", "PNIN", "PNLF", "POLU", "PRDA", "PSAB", "PTRO", "PURA", "RALS", "RANC", "RBMS", "RDTX", "RELI", "RICY", "RIGS", "RIMO", "ROTI", "SAMA", "SAME", "SCNP", "SDRA", "SIMP", "SMCB", "SMMT", "SMPL", "SMSM", "SOCI", "SPMA", "SRAI", "SRIL", "SSSC", "STTP", "SUDI", "SUGI", "SULI", "TARA", "TAXI", "TCID", "TEBE", "TGKA", "TINS", "TIRA", "TOTO", "TRIS", "TRST", "TSPC", "TUGU", "ULTJ", "UNIC", "UNIT", "VINS", "VIVA", "VOKS", "WEGE", "WIM", "WOMF", "WSBP", "WSKT", "WTON", "YPAS", "ZBRA"]
 master_tickers = list(set([t.strip().upper() + ".JK" for t in MASTER_UNIVERSE]))
 
 def get_waktu_wib(): return datetime.now(pytz.timezone('Asia/Jakarta')).strftime("%d %b %Y - %H:%M WIB")
-
-@st.cache_data(ttl=300, show_spinner=False)
-def fetch_ihsg_data():
-    try:
-        df = yf.download("^JKSE", period="1mo", interval="1d", progress=False)
-        if df.empty: return None, None, None, None
-        if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
-        df = df.ffill() 
-        return df, float(df['Close'].iloc[-1]), float(df['Close'].iloc[-1]) - float(df['Close'].iloc[-2]), ((float(df['Close'].iloc[-1]) - float(df['Close'].iloc[-2])) / float(df['Close'].iloc[-2])) * 100
-    except: return None, None, None, None
 
 def get_dynamic_market_roster():
     try:
@@ -254,7 +240,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color: #FFFFFF; font-size: 22px; font-weight: 900; margin-bottom: 0px;'>⚡ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #8B98A9; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 30px;'>QUANTUM MATRIX V17.0</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #8B98A9; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 30px;'>QUANTUM MATRIX V17.1</p>", unsafe_allow_html=True)
     
     tf_pilihan = st.selectbox("⏱️ Timeframe Analisis:", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0)
     
@@ -282,22 +268,25 @@ with st.sidebar:
 # 4. MAIN DASHBOARD RENDERER
 # ==========================================
 if not st.session_state.raw_stocks:
-    st.info("👈 Tekan tombol '🔄 JALANKAN SCAN ENGINE' di sidebar untuk memulai.")
+    st.info("👈 Tekan tombol '🔄 JALANKAN SCAN ENGINE' di sidebar untuk memulai scanning data baru.")
 else:
-    # Pisahkan ke dalam 2 Tab: Dashboard UI (Mirip Gambar) dan Tabel Database
     tab_dash, tab_table = st.tabs(["⚡ SINGLE STOCK DASHBOARD", "🗄️ DATABASE TABEL (300 EMITEN)"])
     
     with tab_dash:
         col_search, _ = st.columns([1, 2])
         with col_search:
-            pilihan_ticker = st.selectbox("🔍 Cari Emiten (Ketik kode saham)", [s['TICKER'] for s in st.session_state.raw_stocks], index=0, label_visibility="collapsed")
+            pilihan_ticker = st.selectbox("🔍 Cari Emiten (Ketik kode saham)", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
         
         # Ambil data spesifik dari ticker yang dipilih
-        s = next((item for item in st.session_state.raw_stocks if item["TICKER"] == pilihan_ticker), None)
+        s = next((item for item in st.session_state.raw_stocks if item.get("TICKER") == pilihan_ticker), None)
         
         if s:
-            # Kalkulasi visual properties
-            grade = s["SETUP_GRADE"]
+            # Proteksi KeyError menggunakan .get() dengan default value
+            grade = s.get("SETUP_GRADE", "WAIT")
+            atr_pct = s.get('ATR_PCT', 0)
+            volatility_badge = "HIGH" if atr_pct > 4 else "NORMAL"
+            vol_color_class = "badge-red" if atr_pct > 4 else "badge-green"
+            
             if "JACKPOT" in grade or "A+" in grade:
                 action_text = "BUY / ACCUMULATE"
                 action_color = "#10B981"
@@ -311,23 +300,28 @@ else:
                 action_color = "#3B82F6"
                 action_bg = "rgba(59, 130, 246, 0.1)"
                 
-            volatility_badge = "HIGH" if s['ATR_PCT'] > 4 else "NORMAL"
-            vol_color_class = "badge-red" if s['ATR_PCT'] > 4 else "badge-green"
+            vol = s.get('VOLUME', 0)
+            vol_sma = s.get('VOL_SMA20', 1) # Prevent div by zero
+            status_bandar = s.get('STATUS_BANDAR', 'NEUTRAL')
+            serok_sig = s.get('SEROK_SIGNAL', '➖ TDK ADA').split()[0]
+            harga = s.get('HARGA', 0)
+            ma20 = s.get('MA20', 0)
+            ma50 = s.get('MA50', 0)
             
             # --- CARD 1: HEADER ---
             st.markdown(f"""
             <div class="pro-card">
                 <div class="header-profile">
                     <div style="display:flex; align-items:center;">
-                        <div class="logo-circle">{s['TICKER'][:2]}</div>
+                        <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
                         <div>
-                            <div class="ticker-title">{s['TICKER']} <span class="badge-primary">⚡ V17 ANALYTICS</span></div>
-                            <div class="ticker-desc">{s['NAME']}</div>
+                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">⚡ V17.1 ANALYTICS</span></div>
+                            <div class="ticker-desc">{s.get('NAME', '')}</div>
                         </div>
                     </div>
                     <div class="score-box">
                         <div style="font-size:10px; color:#8B98A9; letter-spacing:1px; text-transform:uppercase;">WPI Score (Whale)</div>
-                        <div class="score-value">{s['WPI_SCORE']:.2f}</div>
+                        <div class="score-value">{s.get('WPI_SCORE', 0):.2f}</div>
                         <div style="font-size:10px; color:#10B981;">Berdasarkan tekanan volume akhir</div>
                     </div>
                 </div>
@@ -352,16 +346,16 @@ else:
                     <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #1E2638; padding-bottom: 15px;">
                         <div>
                             <div class="data-label">FUNDAMENTAL</div>
-                            <div class="data-value" style="font-size:14px;">ROE <span style="color:#10B981;">{s['ROE']}%</span> &nbsp;|&nbsp; PER <span style="color:#10B981;">{s['PER']}x</span></div>
+                            <div class="data-value" style="font-size:14px;">ROE <span style="color:#10B981;">{s.get('ROE', 0)}%</span> &nbsp;|&nbsp; PER <span style="color:#10B981;">{s.get('PER', 0)}x</span></div>
                         </div>
                         <div style="text-align:right;">
                             <div class="data-label">BANDAR FLOW</div>
-                            <div class="data-value" style="color: {'#10B981' if 'AKUMULASI' in s['STATUS_BANDAR'] else '#F59E0B' if 'NEUTRAL' in s['STATUS_BANDAR'] else '#EF4444'};">{s['STATUS_BANDAR']}</div>
+                            <div class="data-value" style="color: {'#10B981' if 'AKUMULASI' in status_bandar else '#F59E0B' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</div>
                         </div>
                     </div>
                     
                     <div class="meter-container">
-                        <div class="meter-fill" style="width: {s['WPI_SCORE']}%;"></div>
+                        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
                     </div>
                     <div class="meter-labels">
                         <span>EXTREME BEARISH</span>
@@ -372,21 +366,21 @@ else:
                 """, unsafe_allow_html=True)
                 
             with col2:
-                # CARD 3: VOLUME & DANA ASING (Adapted to Smart Money)
+                # CARD 3: VOLUME & DANA ASING
                 st.markdown(f"""
                 <div class="pro-card" style="height:100%;">
                     <div class="card-label">🌐 SMART MONEY ZONE</div>
                     <div style="text-align:center; margin: 15px 0;">
-                        <div style="font-size:32px; font-weight:900; color:{'#10B981' if s['VOLUME'] > s['VOL_SMA20'] else '#EF4444'};">
-                            {s['VOLUME']/1000000:.1f}M
+                        <div style="font-size:32px; font-weight:900; color:{'#10B981' if vol > vol_sma else '#EF4444'};">
+                            {vol/1000000:.1f}M
                         </div>
-                        <div class="badge-{'green' if s['VOLUME'] > s['VOL_SMA20'] else 'red'}" style="display:inline-block; margin-top:5px;">
-                            {'VOLUME SPIKE DETECTED' if s['VOLUME'] > s['VOL_SMA20'] else 'VOLUME DRY / SEPI'}
+                        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:5px;">
+                            {'VOLUME SPIKE DETECTED' if vol > vol_sma else 'VOLUME DRY / SEPI'}
                         </div>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-top:15px; border-top: 1px solid #1E2638; padding-top:10px;">
-                        <span style="color:#10B981;">AVG VOL: {s['VOL_SMA20']/1000000:.1f}M</span>
-                        <span style="color:#EF4444;">SEROK: {s['SEROK_SIGNAL'].split()[0]}</span>
+                        <span style="color:#10B981;">AVG VOL: {vol_sma/1000000:.1f}M</span>
+                        <span style="color:#EF4444;">SEROK: {serok_sig}</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -396,8 +390,8 @@ else:
             
             with col3:
                 # CARD 4: KONDISI HARGA
-                cond_price = "badge-green" if s['HARGA'] > s['MA20'] else "badge-red"
-                cond_ma = "badge-green" if s['MA20'] > s['MA50'] else "badge-red"
+                cond_price = "badge-green" if harga > ma20 else "badge-red"
+                cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
                 
                 st.markdown(f"""
                 <div class="pro-card" style="height:100%;">
@@ -405,15 +399,15 @@ else:
                     <div class="data-grid" style="grid-template-columns: repeat(3, 1fr);">
                         <div class="data-point">
                             <span class="data-label">LAST PRICE</span>
-                            <span class="data-value">{int(s['HARGA']):,}</span>
+                            <span class="data-value">{int(harga):,}</span>
                         </div>
                         <div class="data-point">
                             <span class="data-label">VOLATILITY</span>
-                            <span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge} <span style="font-size:12px; color:#8B98A9;">{s['ATR_PCT']:.1f}% ATR</span></span>
+                            <span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge} <span style="font-size:12px; color:#8B98A9;">{atr_pct:.1f}% ATR</span></span>
                         </div>
                         <div class="data-point">
                             <span class="data-label">MA20 (EMA)</span>
-                            <span class="data-value">{int(s['MA20']):,}</span>
+                            <span class="data-value">{int(ma20):,}</span>
                         </div>
                     </div>
                     
@@ -421,7 +415,7 @@ else:
                         <span class="{cond_price}">• PRICE > MA20</span>
                         <span class="{cond_ma}">• MA20 > MA50</span>
                         <span class="{vol_color_class}">• VOLATILITY (ATR)</span>
-                        <span class="{'badge-green' if s['VOLUME'] > s['VOL_SMA20'] else 'badge-red'}">• LIQUIDITY OK</span>
+                        <span class="{'badge-green' if vol > vol_sma else 'badge-red'}">• LIQUIDITY OK</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -432,7 +426,7 @@ else:
                 <div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
                     <div class="card-label" style="justify-content:center;">🎯 ENTRY AREA</div>
                     <div style="font-size:28px; font-weight:900; color:#FFFFFF; margin:10px 0;">
-                        {int(s['AREA BELI']):,}
+                        {int(s.get('AREA BELI', 0)):,}
                     </div>
                     <div style="color:#8B98A9; font-size:12px;">Area toleransi koreksi sehat (MA20/Support) untuk cicil masuk.</div>
                 </div>
@@ -453,7 +447,7 @@ else:
                     </div>
                     
                     <div style="color:#8B98A9; font-size:13px; line-height:1.5;">
-                        Status sistem: <b>{s['SETUP_GRADE']}</b>. Pastikan untuk selalu memantau ledakan volume di jam bursa. Jika terjadi distribusi di area pucuk, segera amankan profit.
+                        Status sistem: <b>{grade}</b>. Pastikan untuk selalu memantau ledakan volume di jam bursa. Jika terjadi distribusi di area pucuk, segera amankan profit.
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -464,7 +458,7 @@ else:
                 <div class="pro-card" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
                     <div class="card-label" style="justify-content:center;">🚨 MANAJEMEN RISIKO</div>
                     <div style="font-size:28px; font-weight:900; color:#EF4444; margin:10px 0;">
-                        {int(s['TRAILING STOP']):,}
+                        {int(s.get('TRAILING STOP', 0)):,}
                     </div>
                     <div style="color:#8B98A9; font-size:12px;">Cutloss / Trailing Stop otomatis berdasarkan Algoritma Chandelier Exit (ATR).</div>
                 </div>
@@ -477,5 +471,8 @@ else:
         # Menampilkan format DataFrame asli
         df_display = pd.DataFrame(st.session_state.raw_stocks)
         if not df_display.empty:
-            df_display = df_display[['TICKER', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'STATUS_BANDAR', 'SEROK_SIGNAL', 'WPI_SCORE']]
+            # Handle key checking just in case
+            cols_to_show = ['TICKER', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'STATUS_BANDAR', 'SEROK_SIGNAL', 'WPI_SCORE']
+            valid_cols = [c for c in cols_to_show if c in df_display.columns]
+            df_display = df_display[valid_cols]
             st.dataframe(df_display, use_container_width=True, height=500)
