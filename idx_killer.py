@@ -12,7 +12,7 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.7)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.7 ULTIMATE)
 # ==========================================
 CACHE_FILE = "jihan_ghina_saham_cache_v177.json"
 
@@ -101,6 +101,7 @@ st.markdown("""
     .badge-primary { background: rgba(198, 168, 124, 0.1); color: #C6A87C; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(198, 168, 124, 0.3);}
     .badge-green { background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);}
     .badge-red { background: rgba(239, 68, 68, 0.1); color: #EF4444; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);}
+    .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
     
     .score-box { background: #050505; border: 1px solid #27272A; border-radius: 8px; padding: 8px 12px; text-align: center; }
     .score-value { font-size: 20px; font-weight: 800; color: #C6A87C; line-height: 1; margin: 4px 0;}
@@ -113,9 +114,9 @@ st.markdown("""
     .meter-fill { background: linear-gradient(90deg, #EF4444 0%, #C6A87C 50%, #10B981 100%); height: 100%; border-radius: 3px;}
     .meter-labels { display: flex; justify-content: space-between; font-size: 9px; color: #71717A; font-weight: 600; margin-top: 4px;}
     
-    /* Tabs Overhaul */
-    .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #27272A; gap: 5px;}
-    .stTabs [data-baseweb="tab"] { color: #71717A; font-weight: 600; background: transparent; padding: 8px 10px; border: none; font-size:12px;}
+    /* Tabs Overhaul - Dikecilkan untuk 4 Tabs */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #27272A; gap: 0px;}
+    .stTabs [data-baseweb="tab"] { color: #71717A; font-weight: 600; background: transparent; padding: 8px 6px; border: none; font-size: 11px;}
     .stTabs [aria-selected="true"] { color: #C6A87C; border-bottom: 2px solid #C6A87C;}
     
     .sop-box { background: #09090B; border-left: 3px solid #C6A87C; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #D4D4D8; line-height:1.6;}
@@ -191,12 +192,14 @@ def fetch_single_stock(emiten, mode_tf):
     try:
         per, inv = "1y", "1d" 
         kode = emiten.replace(".JK", "")
-        df = yf.download(emiten, period=per, interval=inv, progress=False)
+        tkr = yf.Ticker(emiten)
+        df = tkr.history(period=per, interval=inv)
         if df.empty: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = [col[0] for col in df.columns]
         df = df.ffill().dropna(subset=['Close'])
         if len(df) < 30: return None 
         
+        # Calculate Base Indicators
         df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
         df['SMA50'] = df['Close'].rolling(window=50).mean()
         df['RSI'] = hitung_rsi(df)
@@ -204,6 +207,13 @@ def fetch_single_stock(emiten, mode_tf):
         df['ATR'] = hitung_atr(df)
         df['Vol_SMA20'] = df['Volume'].rolling(window=20).mean()
         df['Chandelier_Exit'] = df['High'].rolling(22).max() - (df['ATR'] * 3.0)
+        
+        # Calculate MACD (Pembaruan Indikator)
+        df['MACD'] = df['Close'].ewm(span=12, adjust=False).mean() - df['Close'].ewm(span=26, adjust=False).mean()
+        df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+        macd_val = float(df['MACD'].iloc[-1])
+        sig_val = float(df['Signal_Line'].iloc[-1])
+        macd_bullish = macd_val > sig_val
         
         harga_skg = float(df['Close'].iloc[-1])
         open_skg = float(df['Open'].iloc[-1])
@@ -243,26 +253,26 @@ def fetch_single_stock(emiten, mode_tf):
             else: status_bandar = "💥 MARK-DOWN"
         else: status_bandar = "➖ NEUTRAL"
             
-        setup_score = sum([harga_skg > ema20_skg, wpi_score > 85, vol_skg > vol_sma20*2, "TDK ADA" not in serok_signal])
+        setup_score = sum([harga_skg > ema20_skg, wpi_score > 85, vol_skg > vol_sma20*2, "TDK ADA" not in serok_signal, macd_bullish])
         if "TDK ADA" not in serok_signal: setup_grade = "🎯 SETUP JACKPOT"
-        elif setup_score >= 2 and wpi_score >= 70: setup_grade = "⭐ SETUP A+"
-        elif setup_score >= 1 and wpi_score >= 80: setup_grade = "⚡ SETUP AGGRESSIVE"
+        elif setup_score >= 3 and wpi_score >= 70: setup_grade = "⭐ SETUP A+"
+        elif setup_score >= 2 and wpi_score >= 80: setup_grade = "⚡ SETUP AGGRESSIVE"
         elif setup_score >= 1: setup_grade = "✔️ SETUP B"
         else: setup_grade = "⚠️ WAIT/WATCHLIST"
 
-        tkr = yf.Ticker(emiten)
-        info = tkr.info if tkr.info else {}
+        # Fundamentals & Analyst Insights (Pembaruan Ekstra)
+        info = tkr.info if hasattr(tkr, 'info') and tkr.info else {}
         
-        # FIX LOGIC DIVIDEND YIELD AGAR NORMAL & PRESISI (Menghindari nilai ribuan)
         raw_yield = info.get('dividendYield', 0)
-        if raw_yield is None:
-            div_yield = 0.0
-        elif raw_yield > 1.0: 
-            div_yield = round(raw_yield, 2)
-        else:
-            div_yield = round(raw_yield * 100, 2)
-            
-        market_cap = info.get('marketCap', 0)
+        div_yield = 0.0 if raw_yield is None else (round(raw_yield, 2) if raw_yield > 1.0 else round(raw_yield * 100, 2))
+        pbv_val = round(info.get('priceToBook', 0) if info.get('priceToBook') else 0, 2)
+        
+        # Yahoo Finance Analyst Data
+        target_low = info.get('targetLowPrice', 0)
+        target_mean = info.get('targetMeanPrice', 0)
+        target_high = info.get('targetHighPrice', 0)
+        rec_key = str(info.get('recommendationKey', 'none')).replace('_', ' ').upper()
+        num_analysts = info.get('numberOfAnalystOpinions', 0)
         
         return {
             "TICKER": kode, "HARGA": harga_skg, "MA20": ema20_skg, "MA50": sma50_skg, 
@@ -270,9 +280,11 @@ def fetch_single_stock(emiten, mode_tf):
             "TRAILING STOP": trailing_stop, "WPI_SCORE": round(wpi_score, 1),
             "SEROK_SIGNAL": serok_signal, "STATUS_BANDAR": status_bandar, "SETUP_GRADE": setup_grade, 
             "PER": round(info.get('trailingPE', 0.0), 2), "ROE": round(info.get('returnOnEquity', 0) * 100 if info.get('returnOnEquity') else 0, 2),
-            "YIELD": f"{div_yield}%", "YIELD_RAW": div_yield, "MCAP": market_cap,
+            "YIELD": f"{div_yield}%", "YIELD_RAW": div_yield, "PBV": pbv_val,
             "RET_1D": ((harga_skg - prev_close) / prev_close * 100), "VOLUME": vol_skg, "VOL_SMA20": vol_sma20, 
-            "ATR_PCT": (float(df['ATR'].iloc[-1]) / harga_skg) * 100, "NAME": info.get('longName', kode)
+            "ATR_PCT": (float(df['ATR'].iloc[-1]) / harga_skg) * 100, "NAME": info.get('longName', kode),
+            "MACD_BULLISH": macd_bullish, "TARGET_LOW": target_low, "TARGET_MEAN": target_mean, 
+            "TARGET_HIGH": target_high, "REC_KEY": rec_key, "NUM_ANALYSTS": num_analysts
         }
     except Exception as e: return None
 
@@ -318,12 +330,13 @@ with st.sidebar:
         st.markdown(f"<div style='font-size:8px; color:#71717A; text-align:center; margin-top:20px;'>Last Update:<br>{st.session_state.last_update}</div>", unsafe_allow_html=True)
 
 # ==========================================
-# 4. MAIN TABS (DASHBOARD, CLUSTERING, SOP)
+# 4. MAIN TABS
 # ==========================================
 if not st.session_state.raw_stocks:
     st.info("👈 Tekan tombol '🔄 SCAN' di sidebar untuk memulai.")
 else:
-    tab_dash, tab_cluster, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTERING", "📖 SOP & PANDUAN"])
+    # 4 Tabs Sesuai Request Baru
+    tab_dash, tab_cluster, tab_export, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTER", "📥 EXPORT", "📖 SOP"])
     
     # ------------------------------------------
     # TAB 1: LUXURY DASHBOARD
@@ -349,6 +362,7 @@ else:
             status_bandar = s.get('STATUS_BANDAR', 'NEUTRAL')
             serok_sig = s.get('SEROK_SIGNAL', '➖ TDK ADA').split()[0]
             harga, ma20, ma50 = s.get('HARGA', 0), s.get('MA20', 0), s.get('MA50', 0)
+            pbv = s.get('PBV', 0)
             
             html_header = f"""
 <div class="pro-card">
@@ -377,7 +391,7 @@ else:
 <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
 <div>
 <span class="data-label">FUNDAMENTAL</span>
-<span class="data-value">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
+<span class="data-value">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span></span>
 </div>
 <div style="text-align:right;">
 <span class="data-label">BANDAR FLOW</span>
@@ -417,6 +431,7 @@ SIG: {serok_sig}
             with col3:
                 cond_price = "badge-green" if harga > ma20 else "badge-red"
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
+                cond_macd = "badge-green" if s.get('MACD_BULLISH') else "badge-red"
                 html_col3 = f"""
 <div class="pro-card" style="height:100%;">
 <div class="card-label">📈 KONDISI HARGA</div>
@@ -426,8 +441,9 @@ SIG: {serok_sig}
 <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
 </div>
 <div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
-<span class="{cond_price}">• PRICE>MA20</span>
+<span class="{cond_price}">• P>MA20</span>
 <span class="{cond_ma}">• MA20>MA50</span>
+<span class="{cond_macd}">• MACD GOLDEN</span>
 </div>
 </div>
 """
@@ -466,6 +482,61 @@ SIG: {serok_sig}
 """
                 st.markdown(html_col6, unsafe_allow_html=True)
 
+            # --- PEMBARUAN 3: ANALYST INSIGHTS UI (YAHOO FINANCE STYLE) ---
+            t_low, t_mean, t_high = s.get('TARGET_LOW', 0), s.get('TARGET_MEAN', 0), s.get('TARGET_HIGH', 0)
+            if t_mean > 0:
+                rec_key = s.get('REC_KEY', 'N/A')
+                rec_color = "badge-green" if "BUY" in rec_key else ("badge-red" if "SELL" in rec_key else "badge-primary")
+                num_analysts = s.get('NUM_ANALYSTS', 0)
+                upside = round(((t_mean - harga) / harga) * 100, 1)
+                
+                # Math untuk posisi dots pada slider (Progress Bar)
+                min_val = min(t_low, harga, t_mean) if t_low > 0 else (harga * 0.8)
+                max_val = max(t_high, harga, t_mean) if t_high > 0 else (harga * 1.2)
+                range_val = max_val - min_val if max_val > min_val else 1
+                
+                cur_pct = max(0, min(100, ((harga - min_val) / range_val) * 100))
+                avg_pct = max(0, min(100, ((t_mean - min_val) / range_val) * 100))
+                
+                html_analyst = f"""
+<div class="pro-card" style="margin-top: 5px;">
+    <div class="card-label">📊 ANALYST INSIGHTS (CONSENSUS)</div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding:0 5px;">
+        <div>
+            <span style="font-size:9px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
+            <span class="{rec_color}" style="font-size:10px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
+        </div>
+        <div style="text-align:right;">
+            <span style="font-size:9px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
+            <span style="font-size:16px; color:{'#10B981' if upside > 0 else '#EF4444'}; font-weight:800;">{'+' if upside > 0 else ''}{upside}%</span>
+        </div>
+    </div>
+    
+    <div style="font-size:10px; color:#FAFAFA; font-weight:700; margin-bottom:12px; padding-left:5px;">Analyst Price Targets</div>
+    
+    <div style="position:relative; height:45px; margin: 0 15px;">
+        <div style="position:absolute; top:10px; left:0; right:0; height:3px; background:#27272A; border-radius:2px;"></div>
+        
+        <!-- Target Low -->
+        <div style="position:absolute; top:6px; left:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%);"></div>
+        <div style="position:absolute; top:20px; left:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(-50%);">{int(t_low):,}</div>
+        
+        <!-- Target High -->
+        <div style="position:absolute; top:6px; right:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(50%);"></div>
+        <div style="position:absolute; top:20px; right:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(50%);">{int(t_high):,}</div>
+        
+        <!-- Current Price -->
+        <div style="position:absolute; top:4px; left:{cur_pct}%; background:#FAFAFA; width:14px; height:14px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:2;"></div>
+        <div style="position:absolute; top:24px; left:{cur_pct}%; font-size:11px; color:#FAFAFA; font-weight:800; transform:translateX(-50%); background:#27272A; border:1px solid #71717A; padding:2px 6px; border-radius:4px; z-index:2;">{int(harga):,}<br><span style="font-size:8px; font-weight:400;">Current</span></div>
+        
+        <!-- Target Avg -->
+        <div style="position:absolute; top:5px; left:{avg_pct}%; background:#3B82F6; width:12px; height:12px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:1;"></div>
+        <div style="position:absolute; top:-18px; left:{avg_pct}%; font-size:11px; color:#3B82F6; font-weight:800; transform:translateX(-50%); background:#09090B; border:1px solid #3B82F6; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:1;">{int(t_mean):,}<br><span style="font-size:8px; font-weight:400;">Average</span></div>
+    </div>
+</div>
+"""
+                st.markdown(html_analyst, unsafe_allow_html=True)
+
     # ------------------------------------------
     # TAB 2: CLUSTERING OTOMATIS
     # ------------------------------------------
@@ -476,31 +547,56 @@ SIG: {serok_sig}
         
         # 1. Cluster Serok Bawah
         df_serok = df_all[~df_all['SEROK_SIGNAL'].str.contains("TDK ADA")]
-        st.markdown("<div class='sop-title'>🟢 CLUSTER: Sinyal Serok Bawah (Rebound/Divergence)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='sop-title'>🟢 Sinyal Serok Bawah (Rebound)</div>", unsafe_allow_html=True)
         if not df_serok.empty:
             st.dataframe(df_serok[['TICKER', 'HARGA', 'SEROK_SIGNAL', 'STATUS_BANDAR']], hide_index=True, use_container_width=True)
         else:
             st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum ada saham yang masuk kriteria Serok Bawah saat ini.</div>", unsafe_allow_html=True)
             
-        # 2. Cluster Dividend Investing (Menggunakan YIELD_RAW yang sudah ternormalisasi > 2%)
+        # 2. Cluster Dividend Investing
         if 'YIELD_RAW' in df_all.columns:
             df_div = df_all[df_all['YIELD_RAW'] >= 2.0].sort_values(by='YIELD_RAW', ascending=False)
-            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 CLUSTER: Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
             if not df_div.empty:
-                st.dataframe(df_div[['TICKER', 'HARGA', 'YIELD', 'ROE', 'PER']], hide_index=True, use_container_width=True)
+                st.dataframe(df_div[['TICKER', 'HARGA', 'YIELD', 'ROE', 'PBV', 'PER']], hide_index=True, use_container_width=True)
             else:
-                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Tidak ada saham dividen tinggi di database scan saat ini.</div>", unsafe_allow_html=True)
+                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Tidak ada saham dividen tinggi di database scan.</div>", unsafe_allow_html=True)
                 
         # 3. Cluster Bandar Akumulasi Kuat
         df_bandar = df_all[df_all['STATUS_BANDAR'].str.contains("AKUMULASI") | df_all['STATUS_BANDAR'].str.contains("MARK-UP")]
-        st.markdown("<div class='sop-title' style='margin-top:20px;'>🐋 CLUSTER: Smart Money Flow (Akumulasi Bandar)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='sop-title' style='margin-top:20px;'>🐋 Smart Money Flow (Akumulasi)</div>", unsafe_allow_html=True)
         if not df_bandar.empty:
             st.dataframe(df_bandar[['TICKER', 'HARGA', 'STATUS_BANDAR', 'WPI_SCORE']], hide_index=True, use_container_width=True)
         else:
             st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum terdeteksi akumulasi masif saat ini.</div>", unsafe_allow_html=True)
 
     # ------------------------------------------
-    # TAB 3: SOP & PANDUAN PENGGUNAAN
+    # TAB 3: EXPORT & WATCHLIST (PEMBARUAN)
+    # ------------------------------------------
+    with tab_export:
+        st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>📥 Ekspor Data ke HP (Excel/CSV)</h4>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#A1A1AA; font-size:12px;'>Unduh hasil <i>scan</i> algoritma hari ini sebagai Watchlist pribadi Anda. File ini bisa langsung dibuka melalui aplikasi Microsoft Excel atau Google Sheets di HP Anda.</p>", unsafe_allow_html=True)
+        
+        df_all = pd.DataFrame(st.session_state.raw_stocks)
+        if not df_all.empty:
+            # Merapikan kolom sebelum diekspor
+            cols_to_export = ['TICKER', 'NAME', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD']
+            df_export = df_all[[c for c in cols_to_export if c in df_all.columns]]
+            
+            csv_data = df_export.to_csv(index=False).encode('utf-8')
+            
+            st.download_button(
+                label="📥 DOWNLOAD WATCHLIST (CSV)",
+                data=csv_data,
+                file_name=f"JG_Ultimate_Watchlist_{get_waktu_wib().replace(':', '')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        else:
+            st.warning("Lakukan SCAN terlebih dahulu di sidebar sebelum melakukan ekspor.")
+
+    # ------------------------------------------
+    # TAB 4: SOP & PANDUAN PENGGUNAAN
     # ------------------------------------------
     with tab_sop:
         st.markdown("""
@@ -511,17 +607,18 @@ SIG: {serok_sig}
                 <li>Pilih Timeframe yang diinginkan (Daily untuk Swing, Weekly untuk Investing).</li>
                 <li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari market.</li>
                 <li>Buka Tab <b>DASHBOARD</b> untuk memantau 1 saham secara detail, atau buka Tab <b>CLUSTERING</b> untuk melihat saham pilihan algoritma secara massal.</li>
+                <li>Gunakan Tab <b>EXPORT</b> untuk menyimpan hasil scan ke HP Anda.</li>
             </ol>
         </div>
         
         <div class="sop-box">
             <div class="sop-title">Penjabaran Hasil Data Reel</div>
             <ul style="margin-left: -15px; margin-bottom:0;">
-                <li style="margin-bottom:8px;"><b>Teknikal (Kondisi Harga):</b> Menggunakan Moving Average (MA20 & MA50). Jika <i>Price > MA20</i> berarti saham sedang dalam trend naik jangka pendek. Area Beli ideal selalu di dekat MA20. Volatilitas diukur dengan indikator ATR (Average True Range).</li>
-                <li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli memenangkan harga di hari itu. Skor di atas 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat dari level terendah hari itu.</li>
-                <li style="margin-bottom:8px;"><b>Bandarmologi (Smart Money):</b> Algoritma ini menganalisa anomali Volume yang melonjak (Volume Spike) lalu mengawinkannya dengan bentuk <i>Candlestick shadow</i>. 
-                Jika volume tinggi di dasar jurang, status menjadi <b>Akumulasi Dasar</b>. Jika volume meledak di pucuk atas, awas <b>Distribusi Pucuk</b>.</li>
-                <li style="margin-bottom:8px;"><b>Fundamental (ROE & YIELD):</b> <b>ROE</b> menunjukkan seberapa efisien perusahaan mencetak laba bersih dari modalnya (>10% bagus). <b>YIELD</b> menunjukkan persentase keuntungan dari Dividen yang dibagikan rutin (Cocok untuk investasi pasif).</li>
+                <li style="margin-bottom:8px;"><b>Teknikal & MACD:</b> Menggunakan MA20 & MA50, diperkuat oleh MACD Golden Cross. Jika <i>Price > MA20</i> dan MACD Bullish, konfirmasi trend naik sangat kuat.</li>
+                <li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli. Skor > 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat.</li>
+                <li style="margin-bottom:8px;"><b>Bandarmologi:</b> Menganalisa anomali Volume yang melonjak (Volume Spike) lalu dikawinkan dengan bentuk <i>Candlestick shadow</i>.</li>
+                <li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
+                <li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
