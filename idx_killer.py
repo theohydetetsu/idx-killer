@@ -402,7 +402,7 @@ else:
 </div>
 </div>
 <div class="score-box">
-<div style="font-size:9px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:700;">WPI Score</div>
+<div style="font-size:10px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:900;">WPI Score</div>
 <div class="score-value">{s.get('WPI_SCORE', 0):.1f}</div>
 </div>
 </div>
