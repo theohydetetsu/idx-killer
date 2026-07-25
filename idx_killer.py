@@ -12,9 +12,9 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.7 ULTIMATE)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.8 ULTIMATE)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v177.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v178.json"
 
 def load_reactive_cache():
     if os.path.exists(CACHE_FILE):
@@ -36,7 +36,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.7", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.8", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -84,39 +84,51 @@ st.markdown("""
         background: linear-gradient(145deg, #121214, #09090B);
         border: 1px solid #27272A; 
         border-radius: 10px; 
-        padding: 12px; 
+        padding: 14px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         margin-bottom: 10px;
     }
     
+    /* Live Market Banner Padding & Styling */
+    .market-banner {
+        background: linear-gradient(145deg, #18181B, #09090B);
+        border: 1px solid #3F3F46;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
     /* Gold Accents */
-    .card-label { color: #C6A87C; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #27272A; padding-bottom: 6px;}
+    .card-label { color: #C6A87C; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #27272A; padding-bottom: 6px;}
     
     .header-profile { display: flex; justify-content: space-between; align-items: center; }
-    .logo-circle { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #C6A87C 0%, #8E793E 100%); display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 800; color: #050505; margin-right: 12px;}
-    .ticker-title { font-size: 22px; font-weight: 800; color: #FAFAFA; line-height: 1.1; display:flex; align-items:center; gap: 6px;}
-    .ticker-desc { color: #A1A1AA; font-size: 11px; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;}
+    .logo-circle { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #C6A87C 0%, #8E793E 100%); display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 800; color: #050505; margin-right: 12px;}
+    .ticker-title { font-size: 24px; font-weight: 800; color: #FAFAFA; line-height: 1.1; display:flex; align-items:center; gap: 6px;}
+    .ticker-desc { color: #A1A1AA; font-size: 12px; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;}
     
     /* Refined Badges */
-    .badge-primary { background: rgba(198, 168, 124, 0.1); color: #C6A87C; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(198, 168, 124, 0.3);}
-    .badge-green { background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);}
-    .badge-red { background: rgba(239, 68, 68, 0.1); color: #EF4444; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);}
-    .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
+    .badge-primary { background: rgba(198, 168, 124, 0.1); color: #C6A87C; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(198, 168, 124, 0.3);}
+    .badge-green { background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);}
+    .badge-red { background: rgba(239, 68, 68, 0.1); color: #EF4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);}
+    .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
     
-    .score-box { background: #050505; border: 1px solid #27272A; border-radius: 8px; padding: 8px 12px; text-align: center; }
-    .score-value { font-size: 20px; font-weight: 800; color: #C6A87C; line-height: 1; margin: 4px 0;}
+    .score-box { background: #050505; border: 1px solid #27272A; border-radius: 8px; padding: 10px 14px; text-align: center; }
+    .score-value { font-size: 24px; font-weight: 800; color: #C6A87C; line-height: 1; margin: 4px 0;}
     
     .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px;}
-    .data-label { font-size: 9px; color: #71717A; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; display:block;}
-    .data-value { font-size: 13px; color: #FAFAFA; font-weight: 700; display:block;}
+    .data-label { font-size: 10px; color: #71717A; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; display:block;}
+    .data-value { font-size: 14px; color: #FAFAFA; font-weight: 700; display:block;}
     
-    .meter-container { background: #27272A; height: 5px; border-radius: 3px; margin-top: 15px; position: relative;}
+    .meter-container { background: #27272A; height: 6px; border-radius: 3px; margin-top: 15px; position: relative;}
     .meter-fill { background: linear-gradient(90deg, #EF4444 0%, #C6A87C 50%, #10B981 100%); height: 100%; border-radius: 3px;}
-    .meter-labels { display: flex; justify-content: space-between; font-size: 9px; color: #71717A; font-weight: 600; margin-top: 4px;}
+    .meter-labels { display: flex; justify-content: space-between; font-size: 10px; color: #71717A; font-weight: 600; margin-top: 4px;}
     
-    /* Tabs Overhaul - Dikecilkan untuk 4 Tabs */
+    /* Tabs Overhaul */
     .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #27272A; gap: 0px;}
-    .stTabs [data-baseweb="tab"] { color: #71717A; font-weight: 600; background: transparent; padding: 8px 6px; border: none; font-size: 11px;}
+    .stTabs [data-baseweb="tab"] { color: #71717A; font-weight: 600; background: transparent; padding: 8px 6px; border: none; font-size: 12px;}
     .stTabs [aria-selected="true"] { color: #C6A87C; border-bottom: 2px solid #C6A87C;}
     
     .sop-box { background: #09090B; border-left: 3px solid #C6A87C; padding: 12px; margin-bottom: 15px; font-size: 12px; color: #D4D4D8; line-height:1.6;}
@@ -129,6 +141,7 @@ st.markdown("""
         .ticker-desc { max-width: 100%; }
         .data-grid { grid-template-columns: 1fr 1fr !important; }
         .score-box { width: 100%; }
+        .market-banner { flex-direction: column; text-align: center; gap: 6px; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -208,7 +221,7 @@ def fetch_single_stock(emiten, mode_tf):
         df['Vol_SMA20'] = df['Volume'].rolling(window=20).mean()
         df['Chandelier_Exit'] = df['High'].rolling(22).max() - (df['ATR'] * 3.0)
         
-        # Calculate MACD (Pembaruan Indikator)
+        # Calculate MACD
         df['MACD'] = df['Close'].ewm(span=12, adjust=False).mean() - df['Close'].ewm(span=26, adjust=False).mean()
         df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
         macd_val = float(df['MACD'].iloc[-1])
@@ -260,14 +273,13 @@ def fetch_single_stock(emiten, mode_tf):
         elif setup_score >= 1: setup_grade = "✔️ SETUP B"
         else: setup_grade = "⚠️ WAIT/WATCHLIST"
 
-        # Fundamentals & Analyst Insights (Pembaruan Ekstra)
+        # Fundamentals & Analyst Insights
         info = tkr.info if hasattr(tkr, 'info') and tkr.info else {}
         
         raw_yield = info.get('dividendYield', 0)
         div_yield = 0.0 if raw_yield is None else (round(raw_yield, 2) if raw_yield > 1.0 else round(raw_yield * 100, 2))
         pbv_val = round(info.get('priceToBook', 0) if info.get('priceToBook') else 0, 2)
         
-        # Yahoo Finance Analyst Data
         target_low = info.get('targetLowPrice', 0)
         target_mean = info.get('targetMeanPrice', 0)
         target_high = info.get('targetHighPrice', 0)
@@ -293,7 +305,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.7</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.8</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -335,14 +347,29 @@ with st.sidebar:
 if not st.session_state.raw_stocks:
     st.info("👈 Tekan tombol '🔄 SCAN' di sidebar untuk memulai.")
 else:
-    # 4 Tabs Sesuai Request Baru
     tab_dash, tab_cluster, tab_export, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTER", "📥 EXPORT", "📖 SOP"])
     
     # ------------------------------------------
     # TAB 1: LUXURY DASHBOARD
     # ------------------------------------------
     with tab_dash:
-        st.markdown("<div style='font-size:10px; color:#71717A; font-weight:700; margin-bottom:5px; text-transform:uppercase;'>🔍 Cari Emiten</div>", unsafe_allow_html=True)
+        # Live IHSG Market Banner (Dipercantik dengan padding dan margin yang lega)
+        last_up_text = st.session_state.last_update if st.session_state.last_update else "Belum diset"
+        market_banner_html = f"""
+        <div class="market-banner">
+            <div>
+                <div style="font-size:10px; color:#A1A1AA; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🇲🇨 MARKET STATUS (IHSG ENGINE)</div>
+                <div style="font-size:14px; font-weight:800; color:#FAFAFA; margin-top:2px;">Live Connected &bull; Ready to Trade</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:10px; color:#71717A;">Sync Status</div>
+                <div style="font-size:11px; font-weight:700; color:#C6A87C;">{last_up_text}</div>
+            </div>
+        </div>
+        """
+        st.markdown(market_banner_html, unsafe_allow_html=True)
+
+        st.markdown("<div style='font-size:11px; color:#71717A; font-weight:700; margin-bottom:5px; text-transform:uppercase;'>🔍 Cari Emiten</div>", unsafe_allow_html=True)
         pilihan_ticker = st.selectbox("Pilih", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0, label_visibility="collapsed")
         s = next((item for item in st.session_state.raw_stocks if item.get("TICKER") == pilihan_ticker), None)
         
@@ -370,12 +397,12 @@ else:
 <div style="display:flex; align-items:center;">
 <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
 <div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.7</span></div>
+<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.8</span></div>
 <div class="ticker-desc">{s.get('NAME', '')}</div>
 </div>
 </div>
 <div class="score-box">
-<div style="font-size:8px; color:#71717A; letter-spacing:1px; text-transform:uppercase;">WPI Score</div>
+<div style="font-size:9px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:700;">WPI Score</div>
 <div class="score-value">{s.get('WPI_SCORE', 0):.1f}</div>
 </div>
 </div>
@@ -387,15 +414,15 @@ else:
             with col1:
                 html_col1 = f"""
 <div class="pro-card" style="height:100%;">
-<div class="card-label">⚡ RINGKASAN STRATEGI</div>
+<div class="card-label">⚡ RINGKASAN STRATEGI & YIELD%</div>
 <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
 <div>
 <span class="data-label">FUNDAMENTAL</span>
-<span class="data-value">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span></span>
+<span class="data-value" style="font-size:15px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
 </div>
 <div style="text-align:right;">
 <span class="data-label">BANDAR FLOW</span>
-<span class="data-value" style="color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
+<span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
 </div>
 </div>
 <div class="meter-container">
@@ -409,18 +436,19 @@ else:
                 st.markdown(html_col1, unsafe_allow_html=True)
                 
             with col2:
+                # Diperbesar ukuran teks smart money
                 html_col2 = f"""
 <div class="pro-card" style="height:100%;">
 <div class="card-label">🌐 SMART MONEY</div>
-<div style="text-align:center; margin: 5px 0;">
-<div style="font-size:22px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
+<div style="text-align:center; margin: 4px 0;">
+<div style="font-size:26px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
 {vol/1000000:.1f}M
 </div>
-<div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:2px;">
+<div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">
 {'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}
 </div>
 </div>
-<div style="text-align:center; font-size:10px; font-weight:600; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
+<div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
 SIG: {serok_sig}
 </div>
 </div>
@@ -450,11 +478,22 @@ SIG: {serok_sig}
                 st.markdown(html_col3, unsafe_allow_html=True)
                 
             with col4:
+                # GABUNGAN ENTRY AREA DAN STOP LOSS DALAM 1 KARTU
                 html_col4 = f"""
 <div class="pro-card" style="height:100%; text-align:center;">
-<div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">🎯 ENTRY AREA</div>
-<div style="font-size:22px; font-weight:800; color:#FAFAFA; margin:2px 0;">{int(s.get('AREA BELI', 0)):,}</div>
-<div style="color:#71717A; font-size:9px;">Toleransi (MA20)</div>
+<div class="card-label" style="justify-content:center; border:none; margin-bottom:2px;">🎯 ENTRY & 🚨 STOP LOSS</div>
+<div style="display:flex; justify-content:space-around; align-items:center; margin-top:4px;">
+<div>
+<div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Entry Area</div>
+<div style="font-size:19px; font-weight:800; color:#FAFAFA; margin-top:2px;">{int(s.get('AREA BELI', 0)):,}</div>
+</div>
+<div style="width:1px; background:#27272A; height:35px;"></div>
+<div>
+<div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Stop Loss</div>
+<div style="font-size:19px; font-weight:800; color:#EF4444; margin-top:2px;">{int(s.get('TRAILING STOP', 0)):,}</div>
+</div>
+</div>
+<div style="color:#71717A; font-size:9px; margin-top:6px;">Auto Chandelier / Tolerance</div>
 </div>
 """
                 st.markdown(html_col4, unsafe_allow_html=True)
@@ -467,22 +506,22 @@ SIG: {serok_sig}
 <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
 <div style="color: {action_color}; font-size: 16px; font-weight: 800;">{action_text}</div>
 </div>
-<div style="color:#A1A1AA; font-size:10px;">Status: <b style="color:#C6A87C;">{grade}</b></div>
+<div style="color:#A1A1AA; font-size:11px;">Status Setup: <b style="color:#C6A87C;">{grade}</b></div>
 </div>
 """
                 st.markdown(html_col5, unsafe_allow_html=True)
                 
             with col6:
+                # Placeholder pengisi simetri kolom bawah agar tetap rapi
                 html_col6 = f"""
-<div class="pro-card" style="height:100%; text-align:center;">
-<div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">🚨 STOP LOSS</div>
-<div style="font-size:22px; font-weight:800; color:#EF4444; margin:2px 0;">{int(s.get('TRAILING STOP', 0)):,}</div>
-<div style="color:#71717A; font-size:9px;">Auto Chandelier</div>
+<div class="pro-card" style="height:100%; text-align:center; display:flex; flex-direction:column; justify-content:center;">
+<div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚡ ENGINE SIGNAL</div>
+<div style="font-size:14px; font-weight:800; color:#10B981; margin-top:4px;">{serok_sig}</div>
+<div style="color:#71717A; font-size:9px; margin-top:2px;">AI Validation Active</div>
 </div>
 """
                 st.markdown(html_col6, unsafe_allow_html=True)
 
-            # --- PEMBARUAN 3: ANALYST INSIGHTS UI (YAHOO FINANCE STYLE) ---
             t_low, t_mean, t_high = s.get('TARGET_LOW', 0), s.get('TARGET_MEAN', 0), s.get('TARGET_HIGH', 0)
             if t_mean > 0:
                 rec_key = s.get('REC_KEY', 'N/A')
@@ -490,7 +529,6 @@ SIG: {serok_sig}
                 num_analysts = s.get('NUM_ANALYSTS', 0)
                 upside = round(((t_mean - harga) / harga) * 100, 1)
                 
-                # Math untuk posisi dots pada slider (Progress Bar)
                 min_val = min(t_low, harga, t_mean) if t_low > 0 else (harga * 0.8)
                 max_val = max(t_high, harga, t_mean) if t_high > 0 else (harga * 1.2)
                 range_val = max_val - min_val if max_val > min_val else 1
@@ -503,33 +541,29 @@ SIG: {serok_sig}
     <div class="card-label">📊 ANALYST INSIGHTS (CONSENSUS)</div>
     <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding:0 5px;">
         <div>
-            <span style="font-size:9px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
-            <span class="{rec_color}" style="font-size:10px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
+            <span style="font-size:10px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
+            <span class="{rec_color}" style="font-size:11px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
         </div>
         <div style="text-align:right;">
-            <span style="font-size:9px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
-            <span style="font-size:16px; color:{'#10B981' if upside > 0 else '#EF4444'}; font-weight:800;">{'+' if upside > 0 else ''}{upside}%</span>
+            <span style="font-size:10px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
+            <span style="font-size:17px; color:{'#10B981' if upside > 0 else '#EF4444'}; font-weight:800;">{'+' if upside > 0 else ''}{upside}%</span>
         </div>
     </div>
     
-    <div style="font-size:10px; color:#FAFAFA; font-weight:700; margin-bottom:12px; padding-left:5px;">Analyst Price Targets</div>
+    <div style="font-size:11px; color:#FAFAFA; font-weight:700; margin-bottom:12px; padding-left:5px;">Analyst Price Targets</div>
     
     <div style="position:relative; height:45px; margin: 0 15px;">
         <div style="position:absolute; top:10px; left:0; right:0; height:3px; background:#27272A; border-radius:2px;"></div>
         
-        <!-- Target Low -->
         <div style="position:absolute; top:6px; left:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%);"></div>
         <div style="position:absolute; top:20px; left:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(-50%);">{int(t_low):,}</div>
         
-        <!-- Target High -->
         <div style="position:absolute; top:6px; right:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(50%);"></div>
         <div style="position:absolute; top:20px; right:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(50%);">{int(t_high):,}</div>
         
-        <!-- Current Price -->
         <div style="position:absolute; top:4px; left:{cur_pct}%; background:#FAFAFA; width:14px; height:14px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:2;"></div>
         <div style="position:absolute; top:24px; left:{cur_pct}%; font-size:11px; color:#FAFAFA; font-weight:800; transform:translateX(-50%); background:#27272A; border:1px solid #71717A; padding:2px 6px; border-radius:4px; z-index:2;">{int(harga):,}<br><span style="font-size:8px; font-weight:400;">Current</span></div>
         
-        <!-- Target Avg -->
         <div style="position:absolute; top:5px; left:{avg_pct}%; background:#3B82F6; width:12px; height:12px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:1;"></div>
         <div style="position:absolute; top:-18px; left:{avg_pct}%; font-size:11px; color:#3B82F6; font-weight:800; transform:translateX(-50%); background:#09090B; border:1px solid #3B82F6; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:1;">{int(t_mean):,}<br><span style="font-size:8px; font-weight:400;">Average</span></div>
     </div>
@@ -538,40 +572,57 @@ SIG: {serok_sig}
                 st.markdown(html_analyst, unsafe_allow_html=True)
 
     # ------------------------------------------
-    # TAB 2: CLUSTERING OTOMATIS
+    # TAB 2: CLUSTERING OTOMATIS (DENGAN FAIL-SAFE KEYERROR)
     # ------------------------------------------
     with tab_cluster:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>🎯 Kategori Pilihan Engine</h4>", unsafe_allow_html=True)
         
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         
-        # 1. Cluster Serok Bawah
-        df_serok = df_all[~df_all['SEROK_SIGNAL'].str.contains("TDK ADA")]
-        st.markdown("<div class='sop-title'>🟢 Sinyal Serok Bawah (Rebound)</div>", unsafe_allow_html=True)
-        if not df_serok.empty:
-            st.dataframe(df_serok[['TICKER', 'HARGA', 'SEROK_SIGNAL', 'STATUS_BANDAR']], hide_index=True, use_container_width=True)
-        else:
-            st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum ada saham yang masuk kriteria Serok Bawah saat ini.</div>", unsafe_allow_html=True)
-            
-        # 2. Cluster Dividend Investing
-        if 'YIELD_RAW' in df_all.columns:
-            df_div = df_all[df_all['YIELD_RAW'] >= 2.0].sort_values(by='YIELD_RAW', ascending=False)
-            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
-            if not df_div.empty:
-                st.dataframe(df_div[['TICKER', 'HARGA', 'YIELD', 'ROE', 'PBV', 'PER']], hide_index=True, use_container_width=True)
+        if not df_all.empty:
+            # 1. Cluster Serok Bawah
+            st.markdown("<div class='sop-title'>🟢 Sinyal Serok Bawah (Rebound)</div>", unsafe_allow_html=True)
+            if 'SEROK_SIGNAL' in df_all.columns:
+                df_serok = df_all[~df_all['SEROK_SIGNAL'].str.contains("TDK ADA", na=False)]
+                if not df_serok.empty:
+                    cols_serok = ['TICKER', 'HARGA', 'SEROK_SIGNAL', 'STATUS_BANDAR']
+                    safe_cols_serok = [c for c in cols_serok if c in df_serok.columns]
+                    st.dataframe(df_serok[safe_cols_serok], hide_index=True, use_container_width=True)
+                else:
+                    st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum ada saham yang masuk kriteria Serok Bawah saat ini.</div>", unsafe_allow_html=True)
             else:
-                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Tidak ada saham dividen tinggi di database scan.</div>", unsafe_allow_html=True)
+                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Silakan tekan tombol SCAN untuk memuat data.</div>", unsafe_allow_html=True)
                 
-        # 3. Cluster Bandar Akumulasi Kuat
-        df_bandar = df_all[df_all['STATUS_BANDAR'].str.contains("AKUMULASI") | df_all['STATUS_BANDAR'].str.contains("MARK-UP")]
-        st.markdown("<div class='sop-title' style='margin-top:20px;'>🐋 Smart Money Flow (Akumulasi)</div>", unsafe_allow_html=True)
-        if not df_bandar.empty:
-            st.dataframe(df_bandar[['TICKER', 'HARGA', 'STATUS_BANDAR', 'WPI_SCORE']], hide_index=True, use_container_width=True)
+            # 2. Cluster Dividend Investing (YIELD%)
+            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
+            if 'YIELD_RAW' in df_all.columns:
+                df_div = df_all[df_all['YIELD_RAW'] >= 2.0].sort_values(by='YIELD_RAW', ascending=False)
+                if not df_div.empty:
+                    cols_div = ['TICKER', 'HARGA', 'YIELD', 'ROE', 'PBV', 'PER']
+                    safe_cols_div = [c for c in cols_div if c in df_div.columns]
+                    st.dataframe(df_div[safe_cols_div], hide_index=True, use_container_width=True)
+                else:
+                    st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Tidak ada saham dividen tinggi di database scan.</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Silakan tekan tombol SCAN untuk memuat data.</div>", unsafe_allow_html=True)
+                    
+            # 3. Cluster Bandar Akumulasi Kuat
+            st.markdown("<div class='sop-title' style='margin-top:20px;'>🐋 Smart Money Flow (Akumulasi)</div>", unsafe_allow_html=True)
+            if 'STATUS_BANDAR' in df_all.columns:
+                df_bandar = df_all[df_all['STATUS_BANDAR'].str.contains("AKUMULASI", na=False) | df_all['STATUS_BANDAR'].str.contains("MARK-UP", na=False)]
+                if not df_bandar.empty:
+                    cols_bandar = ['TICKER', 'HARGA', 'STATUS_BANDAR', 'WPI_SCORE']
+                    safe_cols_bandar = [c for c in cols_bandar if c in df_bandar.columns]
+                    st.dataframe(df_bandar[safe_cols_bandar], hide_index=True, use_container_width=True)
+                else:
+                    st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum terdeteksi akumulasi masif saat ini.</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Silakan tekan tombol SCAN untuk memuat data.</div>", unsafe_allow_html=True)
         else:
-            st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>Belum terdeteksi akumulasi masif saat ini.</div>", unsafe_allow_html=True)
+            st.info("Data kosong. Silakan lakukan SCAN terlebih dahulu.")
 
     # ------------------------------------------
-    # TAB 3: EXPORT & WATCHLIST (PEMBARUAN)
+    # TAB 3: EXPORT & WATCHLIST
     # ------------------------------------------
     with tab_export:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>📥 Ekspor Data ke HP (Excel/CSV)</h4>", unsafe_allow_html=True)
@@ -579,9 +630,9 @@ SIG: {serok_sig}
         
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         if not df_all.empty:
-            # Merapikan kolom sebelum diekspor
             cols_to_export = ['TICKER', 'NAME', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD']
-            df_export = df_all[[c for c in cols_to_export if c in df_all.columns]]
+            safe_export_cols = [c for c in cols_to_export if c in df_all.columns]
+            df_export = df_all[safe_export_cols]
             
             csv_data = df_export.to_csv(index=False).encode('utf-8')
             
