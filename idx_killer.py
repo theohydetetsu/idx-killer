@@ -418,7 +418,7 @@ else:
 <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
 <div>
 <span class="data-label">FUNDAMENTAL</span>
-<span class="data-value" style="font-size:15px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
+<span class="data-value" style="font-size:13px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
 </div>
 <div style="text-align:right;">
 <span class="data-label">BANDAR FLOW</span>
@@ -441,14 +441,14 @@ else:
 <div class="pro-card" style="height:100%;">
 <div class="card-label">🌐 SMART MONEY</div>
 <div style="text-align:center; margin: 4px 0;">
-<div style="font-size:26px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
+<div style="font-size:26px; font-weight:900; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
 {vol/1000000:.1f}M
 </div>
 <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">
 {'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}
 </div>
 </div>
-<div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
+<div style="text-align:center; font-size:13px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
 SIG: {serok_sig}
 </div>
 </div>
