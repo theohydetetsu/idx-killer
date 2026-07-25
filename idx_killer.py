@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 0. REACTIVE ENGINE & PERSISTENT CACHE
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v18_lux.json"
+CACHE_FILE = "jg_saham_cache_v17_7.json"
 
 def load_reactive_cache():
     if os.path.exists(CACHE_FILE):
@@ -33,9 +33,9 @@ if "raw_stocks" not in st.session_state:
     st.session_state.raw_stocks, st.session_state.last_update, st.session_state.ihsg_data = load_reactive_cache()
 
 # ==========================================
-# 1. LUXURY UI SETUP (V17.7 VIBES)
+# 1. LUXURY UI SETUP (V17.7 PURE CLASSIC)
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate", page_icon="✨", layout="wide")
+st.set_page_config(page_title="J-G Ultimate", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -43,19 +43,17 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
     [data-testid="stAppViewContainer"] { background-color: #0E1117 !important; color: #E0E0E0 !important; }
     
-    /* Perbaikan: Membuat header transparan agar tombol sidebar tetap bisa di-klik di HP */
-    [data-testid="stHeader"] { background-color: transparent !important; } 
+    /* Header Transparan: Tombol sidebar (hamburger) tetap aman disentuh di HP */
+    [data-testid="stHeader"] { background-color: transparent !important; }
+    section[data-testid="stSidebar"] { background-color: #0A0D12 !important; border-right: 1px solid #1F2430 !important; }
     
-    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 100% !important; }
-    section[data-testid="stSidebar"] { background-color: #000000 !important; border-right: 1px solid #333 !important; }
-    
-    /* Sleek Tabs */
-    .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #333; }
-    .stTabs [data-baseweb="tab"] { color: #888; font-weight: 600; padding: 10px 15px; font-size: 13px; }
+    /* Sleek Tabs v17.7 */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent; border-bottom: 1px solid #1F2430; gap: 15px; }
+    .stTabs [data-baseweb="tab"] { color: #666; font-weight: 600; padding: 12px 5px; font-size: 12px; letter-spacing: 0.5px; }
     .stTabs [aria-selected="true"] { color: #D4AF37; border-bottom: 2px solid #D4AF37; }
     
-    /* Input Styling */
-    div[data-baseweb="select"] > div, input { background-color: #000 !important; border: 1px solid #333 !important; color: #D4AF37 !important; font-weight: 600 !important; border-radius: 4px !important;}
+    /* Block container reset for mobile */
+    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,13 +68,12 @@ def get_waktu_wib(): return datetime.now(pytz.timezone('Asia/Jakarta')).strftime
 def fetch_ihsg_compass():
     try:
         df = yf.download("^JKSE", period="5d", progress=False)
-        if df.empty: return {"harga": 0, "change": 0, "trend": "NEUTRAL"}
+        if df.empty: return {"harga": 0, "change": 0}
         close_now = float(df['Close'].iloc[-1])
         close_prev = float(df['Close'].iloc[-2])
         change = ((close_now - close_prev) / close_prev) * 100
-        trend = "BULLISH" if change > 0 else "BEARISH"
-        return {"harga": close_now, "change": change, "trend": trend}
-    except: return {"harga": 0, "change": 0, "trend": "NEUTRAL"}
+        return {"harga": close_now, "change": change}
+    except: return {"harga": 0, "change": 0}
 
 def fetch_single_stock(emiten):
     try:
@@ -86,8 +83,6 @@ def fetch_single_stock(emiten):
         df = df.ffill().dropna(subset=['Close'])
         
         df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
-        df['SMA50'] = df['Close'].rolling(window=50).mean()
-        
         high_low = df['High'] - df['Low']
         high_close = np.abs(df['High'] - df['Close'].shift())
         low_close = np.abs(df['Low'] - df['Close'].shift())
@@ -101,7 +96,6 @@ def fetch_single_stock(emiten):
         low_skg = float(df['Low'].iloc[-1])
         vol_skg = float(df['Volume'].iloc[-1])
         ema20_skg = float(df['EMA20'].iloc[-1])
-        sma50_skg = float(df['SMA50'].iloc[-1])
         vol_sma20 = float(df['Vol_SMA20'].iloc[-1])
         atr_skg = float(df['ATR'].iloc[-1])
         
@@ -112,10 +106,7 @@ def fetch_single_stock(emiten):
         wpi_score = ((harga_skg - low_skg) / (high_skg - low_skg)) * 100 if high_skg > low_skg else 50.0
         
         low_20 = float(df['Low'].tail(20).min())
-        is_near_bottom = (harga_skg - low_20) / low_20 <= 0.06
         is_vol_spike = vol_skg > (vol_sma20 * 1.2)
-        
-        serok_signal = "🐋 WHALE ABSORPTION" if (is_vol_spike and lower_shadow > body_size * 1.5 and is_near_bottom) else "➖ TDK ADA"
         
         if is_vol_spike:
             if lower_shadow > (body_size * 1.5): status_bandar = "🐋 AKUMULASI DASAR"
@@ -135,21 +126,20 @@ def fetch_single_stock(emiten):
         
         risk_per_share = harga_skg - trailing_stop
         tp1 = harga_skg + (risk_per_share * 1.5)
-        tp2 = harga_skg + (risk_per_share * 2.5)
 
         return {
             "TICKER": emiten.replace(".JK", ""), "HARGA": harga_skg, "AREA BELI": ema20_skg if harga_skg > ema20_skg else (low_20 + (harga_skg - low_20)*0.3), 
-            "TRAILING STOP": trailing_stop, "TP1": tp1, "TP2": tp2, "WPI_SCORE": round(wpi_score, 1),
-            "SEROK_SIGNAL": serok_signal, "STATUS_BANDAR": status_bandar, "SETUP_GRADE": setup_grade
+            "TRAILING STOP": trailing_stop, "TP1": tp1, "WPI_SCORE": round(wpi_score, 1),
+            "STATUS_BANDAR": status_bandar, "SETUP_GRADE": setup_grade
         }
     except: return None
 
 # ==========================================
-# 3. SIDEBAR (MONEY MANAGEMENT ENGINE)
+# 3. SIDEBAR MENU
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#D4AF37; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#888; font-size:11px; margin-bottom:20px;'>LUXURY EDITION</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#888; font-size:11px; margin-bottom:30px;'>VERSI 17.7 (LUXURY)</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:12px; color:#E0E0E0; font-weight:bold; margin-bottom:10px;'>🛡️ MONEY MANAGEMENT</div>", unsafe_allow_html=True)
     modal_trading = st.number_input("Modal Trading (Rp)", min_value=100000, value=10000000, step=1000000, format="%d")
@@ -160,7 +150,7 @@ with st.sidebar:
         st.session_state.raw_stocks = []
         my_bar = st.progress(0, text="Mengkalibrasi IHSG...")
         st.session_state.ihsg_data = fetch_ihsg_compass()
-        scan_list = master_tickers[:40] # Bisa disesuaikan jumlahnya
+        scan_list = master_tickers[:40] # Bisa disesuaikan jumlah emiten
         for i, t in enumerate(scan_list):
             my_bar.progress((i + 1) / len(scan_list), text=f"Scanning {t}...")
             data = fetch_single_stock(t)
@@ -174,27 +164,26 @@ with st.sidebar:
         st.rerun()
 
 # ==========================================
-# 4. SLEEK LIVE COMPASS (2-ROW LAYOUT ANTI TABRAK)
+# 4. MARKET COMPASS (COMPACT & NEAT)
 # ==========================================
-ihsg = st.session_state.ihsg_data if hasattr(st.session_state, 'ihsg_data') else {"harga": 0, "change": 0, "trend": "NEUTRAL"}
-ihsg_color = "#00C853" if ihsg.get("change", 0) > 0 else "#FF3D00"
+ihsg = st.session_state.ihsg_data if hasattr(st.session_state, 'ihsg_data') else {"harga": 0, "change": 0}
+ihsg_color = "#00C853" if ihsg.get("change", 0) >= 0 else "#FF3D00"
+ihsg_bg = "rgba(0, 200, 83, 0.15)" if ihsg.get("change", 0) >= 0 else "rgba(255, 61, 0, 0.15)"
 ihsg_sign = "+" if ihsg.get("change", 0) > 0 else ""
 
-html_live_ticker = f"""
-<div style="background: #000; padding: 12px 15px; border-radius: 6px; border: 1px solid #333; margin-bottom: 15px;">
-    <!-- Baris 1: Label & Jam -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="color: #888; font-size: 10px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px;">MARKET COMPASS</span>
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <div style="width: 6px; height: 6px; background-color: #00C853; border-radius: 50%; box-shadow: 0 0 5px #00C853; animation: blink 1.5s infinite;"></div>
-            <strong id="live-clock" style="color: #D4AF37; font-size: 12px; font-family: monospace; letter-spacing: 1px;">--:--:--</strong>
+html_compass = f"""
+<div style="background-color: #0A0D12; border: 1px solid #1F2430; border-radius: 6px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; flex-direction: column;">
+        <span style="color: #666; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 4px;">MARKET COMPASS</span>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="color: #FFF; font-size: 16px; font-weight: 800;">IHSG :</span>
+            <span style="color: {ihsg_color}; font-size: 18px; font-weight: 800;">{ihsg.get('harga', 0):,.2f}</span>
+            <span style="background-color: {ihsg_bg}; color: {ihsg_color}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">{ihsg_sign}{ihsg.get('change', 0):.2f}%</span>
         </div>
     </div>
-    <!-- Baris 2: Data IHSG (Bebas memanjang) -->
-    <div>
-        <span style="color: #FFF; font-size: 16px; font-weight: 800; font-family: sans-serif;">IHSG : </span>
-        <span style="color: {ihsg_color}; font-size: 16px; font-weight: 800; font-family: monospace;">{ihsg.get('harga', 0):,.2f}</span>
-        <span style="color: {ihsg_color}; font-size: 12px; margin-left: 5px; font-family: monospace;">({ihsg_sign}{ihsg.get('change', 0):.2f}%)</span>
+    <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="width: 6px; height: 6px; background-color: #D4AF37; border-radius: 50%; box-shadow: 0 0 5px #D4AF37; animation: blink 1.5s infinite;"></div>
+        <span id="live-clock" style="color: #D4AF37; font-size: 13px; font-weight: 600; font-family: monospace;"></span>
     </div>
 </div>
 <style>@keyframes blink {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0.2; }} 100% {{ opacity: 1; }} }}</style>
@@ -204,68 +193,66 @@ html_live_ticker = f"""
     }}, 1000);
 </script>
 """
-components.html(html_live_ticker, height=90)
+components.html(html_compass, height=75)
 
 # ==========================================
-# 5. MAIN DASHBOARD (ELEGANT LAYOUT)
+# 5. MAIN DASHBOARD (V17.7 VERTICAL LAYOUT)
 # ==========================================
 if not st.session_state.raw_stocks:
-    st.info("👈 Tekan tombol '🔄 SCAN MARKET' di menu sidebar (kiri atas) untuk memulai.")
+    st.info("👈 Buka menu kiri (sidebar) dan tekan '🔄 SCAN MARKET' untuk memulai.")
 else:
-    tab_dash, tab_cluster, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTERING", "📖 PANDUAN & SOP"])
+    tab_dash, tab_cluster, tab_sop = st.tabs(["✨ LIVE DASHBOARD", "🎯 AUTO CLUSTERING", "📖 BUKU PANDUAN"])
     
     with tab_dash:
-        pilihan_ticker = st.selectbox("PENCARIAN EMITEN:", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0)
+        pilihan_ticker = st.selectbox("🔍 PENCARIAN EMITEN:", [s.get('TICKER', '') for s in st.session_state.raw_stocks if 'TICKER' in s], index=0)
         s = next((item for item in st.session_state.raw_stocks if item.get("TICKER") == pilihan_ticker), None)
         
         if s:
             harga, entry, sl, tp1 = s.get('HARGA', 0), s.get('AREA BELI', 0), s.get('TRAILING STOP', 0), s.get('TP1', 0)
             
-            # Perhitungan Money Management
+            # Kalkulasi Money Management
             risiko_rp = modal_trading * (risiko_persen / 100)
             risk_per_share = entry - sl
             max_lot = int((risiko_rp / risk_per_share) / 100) if risk_per_share > 0 else 0
             
-            # UI Render Menggunakan HTML Flexbox Murni
-            html_dashboard = f"""
-            <div style="background: transparent; margin-bottom: 20px;">
-                <!-- HEADER EMITEN -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
-                    <div>
-                        <h1 style="margin: 0; font-size: 36px; color: #D4AF37; line-height: 1;">{s.get('TICKER')}</h1>
-                        <h3 style="margin: 5px 0 0 0; color: #00C853; font-size: 20px;">Rp {int(harga):,}</h3>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0; color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;">STATUS BANDAR</p>
-                        <h4 style="margin: 2px 0 0 0; color: #FFF; font-size: 16px;">{s.get('STATUS_BANDAR')}</h4>
-                    </div>
+            # HTML Layout Persis Seperti V17.7 (Elegan, Rapi, Vertikal)
+            html_v17_layout = f"""
+            <!-- KARTU HEADER EMITEN -->
+            <div style="background-color: #0A0D12; border: 1px solid #1F2430; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h1 style="color: #FFF; font-size: 32px; margin: 0; font-weight: 800; line-height: 1.2;">{s.get('TICKER')}</h1>
+                    <h3 style="color: #00C853; font-size: 18px; margin: 0; font-weight: 600;">Rp {int(harga):,}</h3>
                 </div>
-                
-                <!-- METRICS GRID -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                    <div style="background: #000; border: 1px solid #222; border-radius: 6px; padding: 12px; text-align: center;">
-                        <p style="margin: 0; font-size: 10px; color: #888; font-weight: bold; letter-spacing: 1px;">🎯 ENTRY</p>
-                        <h3 style="margin: 5px 0 0 0; color: #FFF; font-size: 18px;">{int(entry):,}</h3>
-                    </div>
-                    <div style="background: #000; border: 1px solid #222; border-radius: 6px; padding: 12px; text-align: center;">
-                        <p style="margin: 0; font-size: 10px; color: #888; font-weight: bold; letter-spacing: 1px;">🚨 STOP LOSS</p>
-                        <h3 style="margin: 5px 0 0 0; color: #FF3D00; font-size: 18px;">{int(sl):,}</h3>
-                    </div>
-                    <div style="background: #000; border: 1px solid #222; border-radius: 6px; padding: 12px; text-align: center;">
-                        <p style="margin: 0; font-size: 10px; color: #888; font-weight: bold; letter-spacing: 1px;">🚀 TP 1</p>
-                        <h3 style="margin: 5px 0 0 0; color: #00C853; font-size: 18px;">{int(tp1):,}</h3>
-                    </div>
-                </div>
-                
-                <!-- MONEY MANAGEMENT CARD -->
-                <div style="background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; padding: 15px; text-align: center;">
-                    <p style="margin: 0; font-size: 11px; color: #D4AF37; font-weight: bold; letter-spacing: 1px;">🛡️ REKOMENDASI BELI MAKSIMAL</p>
-                    <h1 style="margin: 10px 0; font-size: 42px; color: #D4AF37; font-weight: 800; line-height: 1;">{max_lot} <span style="font-size: 16px;">LOT</span></h1>
-                    <p style="margin: 0; font-size: 11px; color: #888;">Maksimal kerugian dibatasi: <span style="color: #FF3D00;">Rp {int(risiko_rp):,}</span></p>
+                <div style="text-align: right;">
+                    <span style="color: #666; font-size: 9px; font-weight: 600; letter-spacing: 1px;">BANDAR STATUS</span><br>
+                    <span style="color: #D4AF37; font-size: 14px; font-weight: 800;">{s.get('STATUS_BANDAR')}</span>
                 </div>
             </div>
+            
+            <!-- METRIK ENTRY (VERTIKAL BERJAJAR RAPI) -->
+            <div style="background-color: #0A0D12; border: 1px solid #1F2430; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 12px;">
+                <span style="color: #666; font-size: 10px; font-weight: 600; letter-spacing: 1px;">🎯 ENTRY IDEAL</span><br>
+                <span style="color: #FFF; font-size: 22px; font-weight: 800;">Rp {int(entry):,}</span>
+            </div>
+            
+            <div style="background-color: #0A0D12; border: 1px solid #1F2430; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 12px;">
+                <span style="color: #666; font-size: 10px; font-weight: 600; letter-spacing: 1px;">🚨 STOP LOSS</span><br>
+                <span style="color: #FF3D00; font-size: 22px; font-weight: 800;">Rp {int(sl):,}</span>
+            </div>
+            
+            <div style="background-color: #0A0D12; border: 1px solid #1F2430; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
+                <span style="color: #666; font-size: 10px; font-weight: 600; letter-spacing: 1px;">🚀 TP 1 (RR 1:1.5)</span><br>
+                <span style="color: #00C853; font-size: 22px; font-weight: 800;">Rp {int(tp1):,}</span>
+            </div>
+            
+            <!-- KARTU REKOMENDASI LOT (GOLD BORDER) -->
+            <div style="border: 1px solid #D4AF37; background-color: rgba(212, 175, 55, 0.05); border-radius: 8px; padding: 20px; text-align: center;">
+                <span style="color: #D4AF37; font-size: 10px; font-weight: 600; letter-spacing: 1px;">🛡️ MAX LOT SIZE (REKOMENDASI)</span><br>
+                <h1 style="color: #D4AF37; font-size: 38px; margin: 10px 0; font-weight: 800; line-height: 1;">{max_lot} <span style="font-size: 16px;">LOT</span></h1>
+                <span style="color: #888; font-size: 11px;">Berdasarkan risiko {risiko_persen}% dari modal</span>
+            </div>
             """
-            st.markdown(html_dashboard, unsafe_allow_html=True)
+            st.markdown(html_v17_layout, unsafe_allow_html=True)
 
     with tab_cluster:
         st.markdown("#### 🔥 TOP SETUP HARI INI")
@@ -274,42 +261,23 @@ else:
         if not df_setup.empty:
             st.dataframe(df_setup[['TICKER', 'HARGA', 'AREA BELI', 'TP1', 'STATUS_BANDAR']], hide_index=True, use_container_width=True)
         else:
-            st.info("Belum ada Setup A+ hari ini.")
+            st.info("Belum ada Setup A+ hari ini berdasarkan data scan terakhir.")
 
     with tab_sop:
-        st.markdown("### 📖 BUKU PANDUAN & SOP J-G ULTIMATE")
+        st.markdown("### 📖 SOP J-G ULTIMATE V17.7")
         st.markdown("Panduan operasional resmi untuk membaca algoritma dan mengambil keputusan eksekusi trading.")
         st.markdown("---")
         
         st.markdown("#### 1. WPI (Whale Pressure Index) Score")
-        st.markdown("WPI adalah indikator untuk mengukur seberapa kuat tekanan pembeli (buyer) dibandingkan penjual (seller) dalam satu hari perdagangan.")
-        st.markdown("- **Parameter / Rumus Asal:** Dihitung dari posisi Harga Penutupan (Close) relatif terhadap rentang pergerakan harga hari itu (High - Low).")
-        st.markdown("- **Cara Membaca & Kode Warna:**")
-        st.markdown("  - 🟢 **> 85 (Sangat Bagus):** Harga ditutup hampir di pucuk tertinggi hari itu. Artinya, bandar memborong barang sampai penutupan.")
-        st.markdown("  - 🟡 **50 - 84 (Netral/Bagus):** Harga ditutup di area tengah/atas. Masih ada perlawanan seimbang.")
-        st.markdown("  - 🔴 **< 50 (Waspada):** Harga ditutup di dekat area harga terendah. Tekanan jual kuat (dibanting seller).")
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("WPI mengukur kekuatan tekanan pembeli dibandingkan penjual dalam satu hari perdagangan.")
+        st.markdown("- **🟢 > 85 (Sangat Bagus):** Harga ditutup di pucuk tertinggi. Bandar memborong barang.")
+        st.markdown("- **🟡 50 - 84 (Netral/Bagus):** Harga ditutup di area atas. Perlawanan seimbang.")
+        st.markdown("- **🔴 < 50 (Waspada):** Harga ditutup di area terendah. Tekanan jual kuat.")
         
-        st.markdown("#### 2. Smart Money (Serok Signal)")
-        st.markdown("Engine ini mendeteksi anomali saat market sedang panik/turun tajam, namun ada 'Uang Pintar' yang menampung barang.")
-        st.markdown("- **Parameter Asal:** Sinyal `🐋 WHALE ABSORPTION` muncul JIKA 3 syarat ini terpenuhi bersamaan:")
-        st.markdown("  1. **Harga di Dasar:** Harga berada maksimal 6% dari harga terendah dalam 20 hari terakhir.")
-        st.markdown("  2. **Volume Meledak:** Volume transaksi melonjak >120% dari rata-rata 20 hari (SMA20 Volume).")
-        st.markdown("  3. **Candlestick Rejection:** Panjang ekor bawah (Lower Shadow) > 1.5 kali panjang badan (Body) candle.")
-        st.markdown("- **Penjelasan Hasil:** Ini adalah area spekulasi *Buy on Weakness* dengan probabilitas pantulan tinggi.")
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("#### 3. Bandar Flow (Status Bandar)")
-        st.markdown("Menggunakan metode Price & Volume Action (VPA) sebagai proksi pergerakan Bandar (karena data broker summary tidak tersedia di sumber publik).")
-        st.markdown("- **Cara Membaca:**")
-        st.markdown("  - **🐋 AKUMULASI DASAR:** Volume meledak + Ekor bawah panjang (Bandar serok di bawah).")
-        st.markdown("  - **🟢 AKUMULASI AWAL:** Volume meledak + Harga naik normal.")
-        st.markdown("  - **🚀 MARK-UP BERINGAS:** Volume meledak + Harga naik + WPI > 70 (Bandar kerek harga naik agresif).")
-        st.markdown("  - **🩸 DISTRIBUSI PUCUK:** Volume meledak + Ekor atas panjang (Bandar jualan saat ritel FOMO).")
-        st.markdown("  - **💥 MARK-DOWN:** Volume meledak + Harga ditutup merah pekat (Bandar buang barang).")
-        st.markdown("  - **➖ NEUTRAL:** Volume transaksi biasa saja / di bawah rata-rata.")
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("#### 4. Analisis Bid & Offer (Analogi Logika)")
-        st.markdown("- **Apakah Bid & Offer ada di sistem ini?** Belum ada. Data Bid & Offer tertutup oleh sistem sekuritas lokal.")
-        st.markdown("- **Analogi Logika (Cara Script Mengakali):** Karena tidak ada Bid/Offer, script menggunakan **Volume Spike & Shadow Analysis**. Kita tidak perlu tertipu melihat antrean Bid/Offer yang sering dipalsukan (Fake Bid/Offer) oleh bandar. Kita cukup melihat **Hasil Akhirnya (Volume & Harga Penutupan)**. Jika Bid dicabut dan harga dibanting, otomatis terbaca sebagai `💥 MARK-DOWN` atau membentuk ekor atas yang panjang.")
+        st.markdown("#### 2. Bandar Flow & Price Action")
+        st.markdown("- **🐋 AKUMULASI DASAR:** Volume meledak + Ekor bawah panjang di area harga rendah.")
+        st.markdown("- **🟢 AKUMULASI AWAL:** Volume meledak + Harga naik normal.")
+        st.markdown("- **🚀 MARK-UP BERINGAS:** Volume meledak + Harga naik + WPI > 70.")
+        st.markdown("- **🩸 DISTRIBUSI PUCUK:** Volume meledak + Ekor atas panjang (Waspada bantingan).")
+        st.markdown("- **💥 MARK-DOWN:** Volume meledak + Harga ditutup merah pekat.")
