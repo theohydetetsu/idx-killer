@@ -105,7 +105,7 @@ st.markdown("""
     .card-label { color: #C6A87C; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #27272A; padding-bottom: 6px;}
     
     .header-profile { display: flex; justify-content: space-between; align-items: center; }
-    .logo-circle { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #C6A87C 0%, #8E793E 100%); display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 800; color: #050505; margin-right: 12px;}
+    .logo-circle { width: 47px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #C6A87C 0%, #8E793E 100%); display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 800; color: #050505; margin-right: 12px;}
     .ticker-title { font-size: 24px; font-weight: 800; color: #FAFAFA; line-height: 1.1; display:flex; align-items:center; gap: 6px;}
     .ticker-desc { color: #A1A1AA; font-size: 12px; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;}
     
@@ -116,7 +116,7 @@ st.markdown("""
     .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
     
     .score-box { background: #050505; border: 1px solid #27272A; border-radius: 8px; padding: 10px 14px; text-align: center; }
-    .score-value { font-size: 24px; font-weight: 800; color: #C6A87C; line-height: 1; margin: 4px 0;}
+    .score-value { font-size: 24px; font-weight: 900; color: #C6A87C; line-height: 1; margin: 4px 0;}
     
     .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px;}
     .data-label { font-size: 10px; color: #71717A; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; display:block;}
