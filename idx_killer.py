@@ -42,7 +42,10 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
     html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
     [data-testid="stAppViewContainer"] { background-color: #0E1117 !important; color: #E0E0E0 !important; }
-    [data-testid="stHeader"] { display: none !important; }
+    
+    /* Perbaikan: Membuat header transparan agar tombol sidebar tetap bisa di-klik di HP */
+    [data-testid="stHeader"] { background-color: transparent !important; } 
+    
     .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 100% !important; }
     section[data-testid="stSidebar"] { background-color: #000000 !important; border-right: 1px solid #333 !important; }
     
@@ -171,23 +174,27 @@ with st.sidebar:
         st.rerun()
 
 # ==========================================
-# 4. SLEEK LIVE COMPASS (JS INJECTION)
+# 4. SLEEK LIVE COMPASS (2-ROW LAYOUT ANTI TABRAK)
 # ==========================================
 ihsg = st.session_state.ihsg_data if hasattr(st.session_state, 'ihsg_data') else {"harga": 0, "change": 0, "trend": "NEUTRAL"}
 ihsg_color = "#00C853" if ihsg.get("change", 0) > 0 else "#FF3D00"
 ihsg_sign = "+" if ihsg.get("change", 0) > 0 else ""
 
 html_live_ticker = f"""
-<div style="display: flex; justify-content: space-between; align-items: center; background: #000; padding: 12px 15px; border-radius: 6px; border: 1px solid #333; margin-bottom: 15px;">
-    <div>
-        <span style="color: #888; font-size: 11px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px;">MARKET COMPASS</span><br>
-        <span style="color: #FFF; font-size: 18px; font-weight: 800; font-family: sans-serif;">IHSG : </span>
-        <span style="color: {ihsg_color}; font-size: 18px; font-weight: 800; font-family: monospace;">{ihsg.get('harga', 0):,.2f}</span>
-        <span style="color: {ihsg_color}; font-size: 12px; margin-left: 5px; font-family: monospace;">({ihsg_sign}{ihsg.get('change', 0):.2f}%)</span>
+<div style="background: #000; padding: 12px 15px; border-radius: 6px; border: 1px solid #333; margin-bottom: 15px;">
+    <!-- Baris 1: Label & Jam -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="color: #888; font-size: 10px; font-family: sans-serif; font-weight: bold; letter-spacing: 1px;">MARKET COMPASS</span>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="width: 6px; height: 6px; background-color: #00C853; border-radius: 50%; box-shadow: 0 0 5px #00C853; animation: blink 1.5s infinite;"></div>
+            <strong id="live-clock" style="color: #D4AF37; font-size: 12px; font-family: monospace; letter-spacing: 1px;">--:--:--</strong>
+        </div>
     </div>
-    <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
-        <div style="width: 6px; height: 6px; background-color: #00C853; border-radius: 50%; box-shadow: 0 0 5px #00C853; animation: blink 1.5s infinite;"></div>
-        <strong id="live-clock" style="color: #D4AF37; font-size: 16px; font-family: monospace; letter-spacing: 1px;">--:--:--</strong>
+    <!-- Baris 2: Data IHSG (Bebas memanjang) -->
+    <div>
+        <span style="color: #FFF; font-size: 16px; font-weight: 800; font-family: sans-serif;">IHSG : </span>
+        <span style="color: {ihsg_color}; font-size: 16px; font-weight: 800; font-family: monospace;">{ihsg.get('harga', 0):,.2f}</span>
+        <span style="color: {ihsg_color}; font-size: 12px; margin-left: 5px; font-family: monospace;">({ihsg_sign}{ihsg.get('change', 0):.2f}%)</span>
     </div>
 </div>
 <style>@keyframes blink {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0.2; }} 100% {{ opacity: 1; }} }}</style>
@@ -197,13 +204,13 @@ html_live_ticker = f"""
     }}, 1000);
 </script>
 """
-components.html(html_live_ticker, height=75)
+components.html(html_live_ticker, height=90)
 
 # ==========================================
 # 5. MAIN DASHBOARD (ELEGANT LAYOUT)
 # ==========================================
 if not st.session_state.raw_stocks:
-    st.info("👈 Tekan tombol '🔄 SCAN MARKET' di sidebar untuk memulai.")
+    st.info("👈 Tekan tombol '🔄 SCAN MARKET' di menu sidebar (kiri atas) untuk memulai.")
 else:
     tab_dash, tab_cluster, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTERING", "📖 PANDUAN & SOP"])
     
@@ -219,7 +226,7 @@ else:
             risk_per_share = entry - sl
             max_lot = int((risiko_rp / risk_per_share) / 100) if risk_per_share > 0 else 0
             
-            # UI Render Menggunakan HTML Flexbox Murni (Anti Berantakan di HP)
+            # UI Render Menggunakan HTML Flexbox Murni
             html_dashboard = f"""
             <div style="background: transparent; margin-bottom: 20px;">
                 <!-- HEADER EMITEN -->
@@ -234,7 +241,7 @@ else:
                     </div>
                 </div>
                 
-                <!-- METRICS GRID (Responsive 3 Columns) -->
+                <!-- METRICS GRID -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                     <div style="background: #000; border: 1px solid #222; border-radius: 6px; padding: 12px; text-align: center;">
                         <p style="margin: 0; font-size: 10px; color: #888; font-weight: bold; letter-spacing: 1px;">🎯 ENTRY</p>
@@ -270,7 +277,6 @@ else:
             st.info("Belum ada Setup A+ hari ini.")
 
     with tab_sop:
-        # PENGGUNAAN NATIVE MARKDOWN UNTUK MENGHINDARI BUG CODE BLOCK
         st.markdown("### 📖 BUKU PANDUAN & SOP J-G ULTIMATE")
         st.markdown("Panduan operasional resmi untuk membaca algoritma dan mengambil keputusan eksekusi trading.")
         st.markdown("---")
