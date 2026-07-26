@@ -12,7 +12,7 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.1 HOTFIX)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.2)
 # ==========================================
 CACHE_FILE = "jihan_ghina_saham_cache_v179.json"
 
@@ -37,7 +37,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.1", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.2", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -168,7 +168,7 @@ def get_waktu_wib(): return datetime.now(pytz.timezone('Asia/Jakarta')).strftime
 def fetch_ihsg():
     try:
         tkr = yf.Ticker("^JKSE")
-        hist = tkr.history(period="5d") # Diperlebar agar terbaca saat weekend
+        hist = tkr.history(period="5d")
         if len(hist) >= 2:
             now = float(hist['Close'].iloc[-1])
             prev = float(hist['Close'].iloc[-2])
@@ -296,9 +296,13 @@ def fetch_single_stock(emiten, mode_tf):
         elif setup_score >= 1: setup_grade = "✔️ SETUP B"
         else: setup_grade = "⚠️ WAIT/WATCHLIST"
 
-        # Fundamentals & Analyst Insights (FIXED BUG YIELD & PBV)
+        # Fundamentals & Analyst Insights
         info = tkr.info if hasattr(tkr, 'info') and tkr.info else {}
         
+        # EXTRACT SECTOR & INDUSTRY
+        sector_val = info.get('sector', 'Sektor Tidak Tersedia')
+        industry_val = info.get('industry', 'Industri Tidak Tersedia')
+
         div_rate = info.get('dividendRate', 0)
         raw_yield = info.get('dividendYield', 0)
         if div_rate and div_rate > 0 and harga_skg > 0:
@@ -318,7 +322,8 @@ def fetch_single_stock(emiten, mode_tf):
             else: pbv_val = pbv_val / 16000 
         pbv_val = round(pbv_val, 2) if pbv_val else 0.0
         
-        eps_val = round(info.get('trailingEps', 0.0), 2)
+        # FIXED EPS DECIMAL
+        eps_val = float(info.get('trailingEps', 0.0))
 
         target_low = info.get('targetLowPrice', 0)
         target_mean = info.get('targetMeanPrice', 0)
@@ -335,6 +340,7 @@ def fetch_single_stock(emiten, mode_tf):
             "YIELD": f"{div_yield}%", "YIELD_RAW": div_yield, "PBV": pbv_val, "EPS": eps_val,
             "RET_1D": ((harga_skg - prev_close) / prev_close * 100), "VOLUME": vol_skg, "VOL_SMA20": vol_sma20, 
             "ATR_PCT": (float(df['ATR'].iloc[-1]) / harga_skg) * 100, "NAME": info.get('longName', kode),
+            "SECTOR": sector_val, "INDUSTRY": industry_val,
             "MACD_BULLISH": macd_bullish, "TARGET_LOW": target_low, "TARGET_MEAN": target_mean, 
             "TARGET_HIGH": target_high, "REC_KEY": rec_key, "NUM_ANALYSTS": num_analysts
         }
@@ -345,7 +351,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.1</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.2</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -441,14 +447,16 @@ else:
             harga, ma20, ma50 = s.get('HARGA', 0), s.get('MA20', 0), s.get('MA50', 0)
             pbv = s.get('PBV', 0)
             
+            # HOTFIX 1: Menambahkan Sector dan Industry di bawah nama saham
             html_header = f"""
 <div class="pro-card">
 <div class="header-profile">
 <div style="display:flex; align-items:center;">
 <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
 <div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.1</span></div>
+<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.2</span></div>
 <div class="ticker-desc">{s.get('NAME', '')}</div>
+<div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
 </div>
 </div>
 <div class="score-box">
@@ -509,7 +517,7 @@ SIG: {serok_sig}
                 cond_price = "badge-green" if harga > ma20 else "badge-red"
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
                 cond_macd = "badge-green" if s.get('MACD_BULLISH') else "badge-red"
-                # UPDATE EPS DISINI: Menggunakan format grid 2x2
+                # HOTFIX 2: Menambahkan 2 desimal pada EPS (.2f)
                 html_col3 = f"""
 <div class="pro-card" style="height:100%;">
 <div class="card-label">📈 KONDISI HARGA & EPS</div>
@@ -517,7 +525,7 @@ SIG: {serok_sig}
 <div><span class="data-label">LAST PRICE</span><span class="data-value">{int(harga):,}</span></div>
 <div><span class="data-label">VOLATILITY</span><span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge}</span></div>
 <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
-<div><span class="data-label">EPS</span><span class="data-value">{int(s.get('EPS', 0)):,}</span></div>
+<div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
 </div>
 <div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
 <span class="{cond_price}">• P>MA20</span>
