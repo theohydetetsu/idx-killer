@@ -12,7 +12,7 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9 ULTIMATE REVISED)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.1 HOTFIX)
 # ==========================================
 CACHE_FILE = "jihan_ghina_saham_cache_v179.json"
 
@@ -37,7 +37,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.1", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -168,8 +168,7 @@ def get_waktu_wib(): return datetime.now(pytz.timezone('Asia/Jakarta')).strftime
 def fetch_ihsg():
     try:
         tkr = yf.Ticker("^JKSE")
-        # PERBAIKAN 1: Period 5d agar saat hari libur/weekend IHSG tetap terbaca
-        hist = tkr.history(period="5d")
+        hist = tkr.history(period="5d") # Diperlebar agar terbaca saat weekend
         if len(hist) >= 2:
             now = float(hist['Close'].iloc[-1])
             prev = float(hist['Close'].iloc[-2])
@@ -236,6 +235,7 @@ def fetch_single_stock(emiten, mode_tf):
         df = df.ffill().dropna(subset=['Close'])
         if len(df) < 30: return None 
         
+        # Calculate Base Indicators
         df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
         df['SMA50'] = df['Close'].rolling(window=50).mean()
         df['RSI'] = hitung_rsi(df)
@@ -244,6 +244,7 @@ def fetch_single_stock(emiten, mode_tf):
         df['Vol_SMA20'] = df['Volume'].rolling(window=20).mean()
         df['Chandelier_Exit'] = df['High'].rolling(22).max() - (df['ATR'] * 3.0)
         
+        # Calculate MACD
         df['MACD'] = df['Close'].ewm(span=12, adjust=False).mean() - df['Close'].ewm(span=26, adjust=False).mean()
         df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
         macd_val = float(df['MACD'].iloc[-1])
@@ -295,12 +296,11 @@ def fetch_single_stock(emiten, mode_tf):
         elif setup_score >= 1: setup_grade = "✔️ SETUP B"
         else: setup_grade = "⚠️ WAIT/WATCHLIST"
 
+        # Fundamentals & Analyst Insights (FIXED BUG YIELD & PBV)
         info = tkr.info if hasattr(tkr, 'info') and tkr.info else {}
         
-        # --- PERBAIKAN 4 & 2: KALKULASI MANUAL YIELD, ROE, PBV, EPS ---
         div_rate = info.get('dividendRate', 0)
         raw_yield = info.get('dividendYield', 0)
-        
         if div_rate and div_rate > 0 and harga_skg > 0:
             div_yield = (div_rate / harga_skg) * 100 
         else:
@@ -314,14 +314,11 @@ def fetch_single_stock(emiten, mode_tf):
         
         pbv_val = info.get('priceToBook', 0)
         if pbv_val and pbv_val > 100: 
-            if per_val and roe_raw:
-                pbv_val = per_val * roe_raw
-            else:
-                pbv_val = pbv_val / 16000 
+            if per_val and roe_raw: pbv_val = per_val * roe_raw
+            else: pbv_val = pbv_val / 16000 
         pbv_val = round(pbv_val, 2) if pbv_val else 0.0
         
         eps_val = round(info.get('trailingEps', 0.0), 2)
-        # -------------------------------------------------------------
 
         target_low = info.get('targetLowPrice', 0)
         target_mean = info.get('targetMeanPrice', 0)
@@ -348,7 +345,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.1</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -397,6 +394,9 @@ if not st.session_state.raw_stocks:
 else:
     tab_dash, tab_cluster, tab_export, tab_sop = st.tabs(["✨ DASHBOARD", "🎯 CLUSTER", "📥 EXPORT", "📖 SOP"])
     
+    # ------------------------------------------
+    # TAB 1: LUXURY DASHBOARD
+    # ------------------------------------------
     with tab_dash:
         last_up_text = st.session_state.last_update if st.session_state.last_update else "Belum diset"
         ihsg = st.session_state.ihsg_data
@@ -447,7 +447,7 @@ else:
 <div style="display:flex; align-items:center;">
 <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
 <div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9</span></div>
+<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.1</span></div>
 <div class="ticker-desc">{s.get('NAME', '')}</div>
 </div>
 </div>
@@ -509,8 +509,7 @@ SIG: {serok_sig}
                 cond_price = "badge-green" if harga > ma20 else "badge-red"
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
                 cond_macd = "badge-green" if s.get('MACD_BULLISH') else "badge-red"
-                
-                # PERBAIKAN 2: GRID MENJADI 2x2 DAN DITAMBAH EPS
+                # UPDATE EPS DISINI: Menggunakan format grid 2x2
                 html_col3 = f"""
 <div class="pro-card" style="height:100%;">
 <div class="card-label">📈 KONDISI HARGA & EPS</div>
@@ -586,14 +585,13 @@ SIG: {serok_sig}
                 cur_pct = max(0, min(100, ((harga - min_val) / range_val) * 100))
                 avg_pct = max(0, min(100, ((t_mean - min_val) / range_val) * 100))
                 
-                # PERBAIKAN 3: UI REKOMENDASI DIPERINDAH (MENYERUPAI CHART / GAUGE)
                 html_analyst = f"""
 <div class="pro-card" style="margin-top: 5px;">
 <div class="card-label">📊 ANALYST INSIGHTS (CONSENSUS)</div>
 <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding:0 5px;">
 <div>
 <span style="font-size:10px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
-<span class="{rec_color}" style="font-size:13px; font-weight:800; margin-top:4px; display:inline-block; padding: 4px 8px;">{rec_key} ({num_analysts})</span>
+<span class="{rec_color}" style="font-size:11px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
 </div>
 <div style="text-align:right;">
 <span style="font-size:10px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
@@ -616,6 +614,9 @@ SIG: {serok_sig}
 """
                 st.markdown(html_analyst, unsafe_allow_html=True)
 
+    # ------------------------------------------
+    # TAB 2: CLUSTERING OTOMATIS
+    # ------------------------------------------
     with tab_cluster:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>🎯 Kategori Pilihan Engine</h4>", unsafe_allow_html=True)
         
@@ -660,13 +661,16 @@ SIG: {serok_sig}
         else:
             st.info("Data kosong. Silakan lakukan SCAN terlebih dahulu.")
 
+    # ------------------------------------------
+    # TAB 3: EXPORT & WATCHLIST
+    # ------------------------------------------
     with tab_export:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>📥 Ekspor Data ke HP (Excel/CSV)</h4>", unsafe_allow_html=True)
         st.markdown("<p style='color:#A1A1AA; font-size:12px;'>Unduh hasil <i>scan</i> algoritma hari ini sebagai Watchlist pribadi Anda. File ini bisa langsung dibuka melalui aplikasi Microsoft Excel atau Google Sheets di HP Anda.</p>", unsafe_allow_html=True)
         
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         if not df_all.empty:
-            cols_to_export = ['TICKER', 'NAME', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD']
+            cols_to_export = ['TICKER', 'NAME', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD', 'EPS']
             safe_export_cols = [c for c in cols_to_export if c in df_all.columns]
             df_export = df_all[safe_export_cols]
             
@@ -682,6 +686,9 @@ SIG: {serok_sig}
         else:
             st.warning("Lakukan SCAN terlebih dahulu di sidebar sebelum melakukan ekspor.")
 
+    # ------------------------------------------
+    # TAB 4: SOP & PANDUAN PENGGUNAAN
+    # ------------------------------------------
     with tab_sop:
         st.markdown("""
 <div class="sop-box">
@@ -701,7 +708,7 @@ SIG: {serok_sig}
 <li style="margin-bottom:8px;"><b>Teknikal & MACD:</b> Menggunakan MA20 & MA50, diperkuat oleh MACD Golden Cross. Jika <i>Price > MA20</i> dan MACD Bullish, konfirmasi trend naik sangat kuat.</li>
 <li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli. Skor > 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat.</li>
 <li style="margin-bottom:8px;"><b>Bandarmologi:</b> Menganalisa anomali Volume yang melonjak (Volume Spike) lalu dikawinkan dengan bentuk <i>Candlestick shadow</i>.</li>
-<li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
+<li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV, EPS & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), <b>EPS</b> adalah laba bersih per lembar saham, dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
 <li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
 </ul>
 </div>
