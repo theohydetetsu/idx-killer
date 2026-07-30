@@ -12,9 +12,9 @@ import os
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.2)
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.3)
 # ==========================================
-CACHE_FILE = "jihan_ghina_saham_cache_v179.json"
+CACHE_FILE = "jihan_ghina_saham_cache_v1793.json"
 
 def load_reactive_cache():
     if os.path.exists(CACHE_FILE):
@@ -37,7 +37,7 @@ if "current_tf" not in st.session_state: st.session_state.current_tf = "1 Hari (
 # ==========================================
 # 1. LUXURY UI & EXTREME MOBILE CSS
 # ==========================================
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.2", page_icon="✨", layout="wide")
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.3", page_icon="✨", layout="wide")
 
 st.markdown("""
 <style>
@@ -244,6 +244,22 @@ def fetch_single_stock(emiten, mode_tf):
         df['Vol_SMA20'] = df['Volume'].rolling(window=20).mean()
         df['Chandelier_Exit'] = df['High'].rolling(22).max() - (df['ATR'] * 3.0)
         
+        # VWAP (20-Day Rolling VWAP)
+        typical_price = (df['High'] + df['Low'] + df['Close']) / 3
+        df['VWAP'] = (typical_price * df['Volume']).rolling(window=20).sum() / df['Volume'].rolling(window=20).sum()
+        vwap_skg = float(df['VWAP'].iloc[-1]) if not pd.isna(df['VWAP'].iloc[-1]) else float(df['Close'].iloc[-1])
+        
+        # Fibonacci Retracement (120 Days Swing)
+        fibo_window = df.tail(120)
+        max_h = float(fibo_window['High'].max())
+        min_l = float(fibo_window['Low'].min())
+        fibo_diff = max_h - min_l
+        
+        fibo_236 = max_h - 0.236 * fibo_diff
+        fibo_382 = max_h - 0.382 * fibo_diff
+        fibo_500 = max_h - 0.500 * fibo_diff
+        fibo_618 = max_h - 0.618 * fibo_diff
+        
         # Calculate MACD
         df['MACD'] = df['Close'].ewm(span=12, adjust=False).mean() - df['Close'].ewm(span=26, adjust=False).mean()
         df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
@@ -299,7 +315,6 @@ def fetch_single_stock(emiten, mode_tf):
         # Fundamentals & Analyst Insights
         info = tkr.info if hasattr(tkr, 'info') and tkr.info else {}
         
-        # EXTRACT SECTOR & INDUSTRY
         sector_val = info.get('sector', 'Sektor Tidak Tersedia')
         industry_val = info.get('industry', 'Industri Tidak Tersedia')
 
@@ -322,7 +337,6 @@ def fetch_single_stock(emiten, mode_tf):
             else: pbv_val = pbv_val / 16000 
         pbv_val = round(pbv_val, 2) if pbv_val else 0.0
         
-        # FIXED EPS DECIMAL
         eps_val = float(info.get('trailingEps', 0.0))
 
         target_low = info.get('targetLowPrice', 0)
@@ -342,7 +356,9 @@ def fetch_single_stock(emiten, mode_tf):
             "ATR_PCT": (float(df['ATR'].iloc[-1]) / harga_skg) * 100, "NAME": info.get('longName', kode),
             "SECTOR": sector_val, "INDUSTRY": industry_val,
             "MACD_BULLISH": macd_bullish, "TARGET_LOW": target_low, "TARGET_MEAN": target_mean, 
-            "TARGET_HIGH": target_high, "REC_KEY": rec_key, "NUM_ANALYSTS": num_analysts
+            "TARGET_HIGH": target_high, "REC_KEY": rec_key, "NUM_ANALYSTS": num_analysts,
+            "VWAP": vwap_skg, "FIBO_236": fibo_236, "FIBO_382": fibo_382,
+            "FIBO_500": fibo_500, "FIBO_618": fibo_618, "FIBO_MAX": max_h, "FIBO_MIN": min_l
         }
     except Exception as e: return None
 
@@ -351,7 +367,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.2</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.3</p>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True)
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed")
@@ -412,17 +428,17 @@ else:
         ihsg_sign = "+" if ihsg_change >= 0 else ""
         
         market_banner_html = f"""
-<div class="market-banner">
-<div>
-<div style="font-size:10px; color:#A1A1AA; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🇲🇨 IHSG (COMPOSITE)</div>
-<div style="font-size:18px; font-weight:800; color:{ihsg_color}; margin-top:2px;">{ihsg_val:,.2f} <span style="font-size:12px; font-weight:600;">({ihsg_sign}{ihsg_change:.2f}%)</span></div>
-</div>
-<div style="text-align:right;">
-<div style="font-size:10px; color:#71717A;">Sync Status</div>
-<div style="font-size:11px; font-weight:700; color:#C6A87C;">{last_up_text}</div>
-</div>
-</div>
-"""
+        <div class="market-banner">
+            <div>
+                <div style="font-size:10px; color:#A1A1AA; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🇲🇨 IHSG (COMPOSITE)</div>
+                <div style="font-size:18px; font-weight:800; color:{ihsg_color}; margin-top:2px;">{ihsg_val:,.2f} <span style="font-size:12px; font-weight:600;">({ihsg_sign}{ihsg_change:.2f}%)</span></div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:10px; color:#71717A;">Sync Status</div>
+                <div style="font-size:11px; font-weight:700; color:#C6A87C;">{last_up_text}</div>
+            </div>
+        </div>
+        """
         st.markdown(market_banner_html, unsafe_allow_html=True)
 
         st.markdown("<div style='font-size:11px; color:#71717A; font-weight:700; margin-bottom:5px; text-transform:uppercase;'>🔍 Cari Emiten</div>", unsafe_allow_html=True)
@@ -447,69 +463,68 @@ else:
             harga, ma20, ma50 = s.get('HARGA', 0), s.get('MA20', 0), s.get('MA50', 0)
             pbv = s.get('PBV', 0)
             
-            # HOTFIX 1: Menambahkan Sector dan Industry di bawah nama saham
             html_header = f"""
-<div class="pro-card">
-<div class="header-profile">
-<div style="display:flex; align-items:center;">
-<div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
-<div>
-<div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.2</span></div>
-<div class="ticker-desc">{s.get('NAME', '')}</div>
-<div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
-</div>
-</div>
-<div class="score-box">
-<div style="font-size:9px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:700;">WPI Score</div>
-<div class="score-value">{s.get('WPI_SCORE', 0):.1f}</div>
-</div>
-</div>
-</div>
-"""
+            <div class="pro-card">
+                <div class="header-profile">
+                    <div style="display:flex; align-items:center;">
+                        <div class="logo-circle">{s.get('TICKER', 'XX')[:2]}</div>
+                        <div>
+                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.3</span></div>
+                            <div class="ticker-desc">{s.get('NAME', '')}</div>
+                            <div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
+                        </div>
+                    </div>
+                    <div class="score-box">
+                        <div style="font-size:9px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:700;">WPI Score</div>
+                        <div class="score-value">{s.get('WPI_SCORE', 0):.1f}</div>
+                    </div>
+                </div>
+            </div>
+            """
             st.markdown(html_header, unsafe_allow_html=True)
             
             col1, col2 = st.columns([1.5, 1])
             with col1:
                 html_col1 = f"""
-<div class="pro-card" style="height:100%;">
-<div class="card-label">⚡ RINGKASAN STRATEGI & YIELD%</div>
-<div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
-<div>
-<span class="data-label">FUNDAMENTAL</span>
-<span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
-</div>
-<div style="text-align:right;">
-<span class="data-label">BANDAR FLOW</span>
-<span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
-</div>
-</div>
-<div class="meter-container">
-<div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
-</div>
-<div class="meter-labels">
-<span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
-</div>
-</div>
-"""
+                <div class="pro-card" style="height:100%;">
+                    <div class="card-label">⚡ RINGKASAN STRATEGI & YIELD%</div>
+                    <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
+                        <div>
+                            <span class="data-label">FUNDAMENTAL</span>
+                            <span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="data-label">BANDAR FLOW</span>
+                            <span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
+                        </div>
+                    </div>
+                    <div class="meter-container">
+                        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
+                    </div>
+                    <div class="meter-labels">
+                        <span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
+                    </div>
+                </div>
+                """
                 st.markdown(html_col1, unsafe_allow_html=True)
                 
             with col2:
                 html_col2 = f"""
-<div class="pro-card" style="height:100%;">
-<div class="card-label">🌐 SMART MONEY</div>
-<div style="text-align:center; margin: 4px 0;">
-<div style="font-size:30px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
-{vol/1000000:.1f}M
-</div>
-<div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">
-{'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}
-</div>
-</div>
-<div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
-SIG: {serok_sig}
-</div>
-</div>
-"""
+                <div class="pro-card" style="height:100%;">
+                    <div class="card-label">🌐 SMART MONEY</div>
+                    <div style="text-align:center; margin: 4px 0;">
+                        <div style="font-size:30px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
+                            {vol/1000000:.1f}M
+                        </div>
+                        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">
+                            {'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}
+                        </div>
+                    </div>
+                    <div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
+                        SIG: {serok_sig}
+                    </div>
+                </div>
+                """
                 st.markdown(html_col2, unsafe_allow_html=True)
                 
             col3, col4 = st.columns([1.5, 1])
@@ -517,67 +532,111 @@ SIG: {serok_sig}
                 cond_price = "badge-green" if harga > ma20 else "badge-red"
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red"
                 cond_macd = "badge-green" if s.get('MACD_BULLISH') else "badge-red"
-                # HOTFIX 2: Menambahkan 2 desimal pada EPS (.2f)
                 html_col3 = f"""
-<div class="pro-card" style="height:100%;">
-<div class="card-label">📈 KONDISI HARGA & EPS</div>
-<div class="data-grid" style="grid-template-columns: repeat(2, 1fr);">
-<div><span class="data-label">LAST PRICE</span><span class="data-value">{int(harga):,}</span></div>
-<div><span class="data-label">VOLATILITY</span><span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge}</span></div>
-<div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
-<div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
-</div>
-<div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
-<span class="{cond_price}">• P>MA20</span>
-<span class="{cond_ma}">• MA20>MA50</span>
-<span class="{cond_macd}">• MACD GOLDEN</span>
-</div>
-</div>
-"""
+                <div class="pro-card" style="height:100%;">
+                    <div class="card-label">📈 KONDISI HARGA & EPS</div>
+                    <div class="data-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div><span class="data-label">LAST PRICE</span><span class="data-value">{int(harga):,}</span></div>
+                        <div><span class="data-label">VOLATILITY</span><span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge}</span></div>
+                        <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
+                        <div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
+                    </div>
+                    <div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
+                        <span class="{cond_price}">• P>MA20</span>
+                        <span class="{cond_ma}">• MA20>MA50</span>
+                        <span class="{cond_macd}">• MACD GOLDEN</span>
+                    </div>
+                </div>
+                """
                 st.markdown(html_col3, unsafe_allow_html=True)
                 
             with col4:
                 html_col4 = f"""
-<div class="pro-card" style="height:100%; text-align:center;">
-<div class="card-label" style="justify-content:center; border:none; margin-bottom:2px;">🎯 ENTRY & 🚨 STOP LOSS</div>
-<div style="display:flex; justify-content:space-around; align-items:center; margin-top:4px;">
-<div>
-<div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Entry Area</div>
-<div style="font-size:19px; font-weight:800; color:#FAFAFA; margin-top:2px;">{int(s.get('AREA BELI', 0)):,}</div>
-</div>
-<div style="width:1px; background:#27272A; height:35px;"></div>
-<div>
-<div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Stop Loss</div>
-<div style="font-size:19px; font-weight:800; color:#EF4444; margin-top:2px;">{int(s.get('TRAILING STOP', 0)):,}</div>
-</div>
-</div>
-<div style="color:#71717A; font-size:9px; margin-top:6px;">Auto Chandelier / Tolerance</div>
-</div>
-"""
+                <div class="pro-card" style="height:100%; text-align:center;">
+                    <div class="card-label" style="justify-content:center; border:none; margin-bottom:2px;">🎯 ENTRY & 🚨 STOP LOSS</div>
+                    <div style="display:flex; justify-content:space-around; align-items:center; margin-top:4px;">
+                        <div>
+                            <div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Entry Area</div>
+                            <div style="font-size:19px; font-weight:800; color:#FAFAFA; margin-top:2px;">{int(s.get('AREA BELI', 0)):,}</div>
+                        </div>
+                        <div style="width:1px; background:#27272A; height:35px;"></div>
+                        <div>
+                            <div style="font-size:8px; color:#71717A; text-transform:uppercase; font-weight:700;">Stop Loss</div>
+                            <div style="font-size:19px; font-weight:800; color:#EF4444; margin-top:2px;">{int(s.get('TRAILING STOP', 0)):,}</div>
+                        </div>
+                    </div>
+                    <div style="color:#71717A; font-size:9px; margin-top:6px;">Auto Chandelier / Tolerance</div>
+                </div>
+                """
                 st.markdown(html_col4, unsafe_allow_html=True)
                 
             col5, col6 = st.columns([1.5, 1])
             with col5:
                 html_col5 = f"""
-<div class="pro-card" style="height:100%;">
-<div class="card-label">🛡️ KEPUTUSAN STRATEGI</div>
-<div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
-<div style="color: {action_color}; font-size: 16px; font-weight: 800;">{action_text}</div>
-</div>
-<div style="color:#A1A1AA; font-size:11px;">Status Setup: <b style="color:#C6A87C;">{grade}</b></div>
-</div>
-"""
+                <div class="pro-card" style="height:100%;">
+                    <div class="card-label">🛡️ KEPUTUSAN STRATEGI</div>
+                    <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
+                        <div style="color: {action_color}; font-size: 16px; font-weight: 800;">{action_text}</div>
+                    </div>
+                    <div style="color:#A1A1AA; font-size:11px;">Status Setup: <b style="color:#C6A87C;">{grade}</b></div>
+                </div>
+                """
                 st.markdown(html_col5, unsafe_allow_html=True)
                 
             with col6:
                 html_col6 = f"""
-<div class="pro-card" style="height:100%; text-align:center; display:flex; flex-direction:column; justify-content:center;">
-<div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚡ ENGINE SIGNAL</div>
-<div style="font-size:14px; font-weight:800; color:#10B981; margin-top:4px;">{serok_sig}</div>
-<div style="color:#71717A; font-size:9px; margin-top:2px;">AI Validation Active</div>
-</div>
-"""
+                <div class="pro-card" style="height:100%; text-align:center; display:flex; flex-direction:column; justify-content:center;">
+                    <div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚡ ENGINE SIGNAL</div>
+                    <div style="font-size:14px; font-weight:800; color:#10B981; margin-top:4px;">{serok_sig}</div>
+                    <div style="color:#71717A; font-size:9px; margin-top:2px;">AI Validation Active</div>
+                </div>
+                """
                 st.markdown(html_col6, unsafe_allow_html=True)
+
+            # ROW BARU: FIBONACCI DAN VWAP
+            col7, col8 = st.columns([1.5, 1])
+            with col7:
+                html_col7 = f"""
+                <div class="pro-card" style="height:100%;">
+                    <div class="card-label">📏 FIBONACCI RETRACEMENT (120D)</div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; padding-bottom:4px; border-bottom:1px dashed #27272A;">
+                        <span style="color:#71717A;">100% (High)</span> <span style="color:#FAFAFA;">{int(s.get('FIBO_MAX',0)):,}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                        <span style="color:#A1A1AA;">61.8% (Golden Pocket)</span> <span style="color:#C6A87C; font-weight:700;">{int(s.get('FIBO_618',0)):,}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                        <span style="color:#A1A1AA;">50.0% (Equilibrium)</span> <span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_500',0)):,}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                        <span style="color:#A1A1AA;">38.2%</span> <span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_382',0)):,}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; padding-top:4px; border-top:1px dashed #27272A;">
+                        <span style="color:#71717A;">0% (Low)</span> <span style="color:#FAFAFA;">{int(s.get('FIBO_MIN',0)):,}</span>
+                    </div>
+                </div>
+                """
+                st.markdown(html_col7, unsafe_allow_html=True)
+                
+            with col8:
+                vwap_val = s.get('VWAP', 0)
+                vwap_diff = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0
+                vwap_badge = "badge-green" if harga > vwap_val else "badge-red"
+                vwap_text = "BULLISH (P > VWAP)" if harga > vwap_val else "BEARISH (P < VWAP)"
+                
+                html_col8 = f"""
+                <div class="pro-card" style="height:100%; text-align:center; display:flex; flex-direction:column; justify-content:center;">
+                    <div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚖️ VWAP (20D)</div>
+                    <div style="font-size:22px; font-weight:800; color:{'#10B981' if harga > vwap_val else '#EF4444'}; margin-top:4px;">{int(vwap_val):,}</div>
+                    <div style="color:#71717A; font-size:10px; margin-top:4px;">
+                        Gap to VWAP: <b style="color:{'#10B981' if vwap_diff > 0 else '#EF4444'};">{vwap_diff:+.2f}%</b>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <span class="{vwap_badge}" style="font-size:9px; padding:3px 6px;">{vwap_text}</span>
+                    </div>
+                </div>
+                """
+                st.markdown(html_col8, unsafe_allow_html=True)
 
             t_low, t_mean, t_high = s.get('TARGET_LOW', 0), s.get('TARGET_MEAN', 0), s.get('TARGET_HIGH', 0)
             if t_mean > 0:
@@ -594,32 +653,32 @@ SIG: {serok_sig}
                 avg_pct = max(0, min(100, ((t_mean - min_val) / range_val) * 100))
                 
                 html_analyst = f"""
-<div class="pro-card" style="margin-top: 5px;">
-<div class="card-label">📊 ANALYST INSIGHTS (CONSENSUS)</div>
-<div style="display:flex; justify-content:space-between; margin-bottom:15px; padding:0 5px;">
-<div>
-<span style="font-size:10px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
-<span class="{rec_color}" style="font-size:11px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
-</div>
-<div style="text-align:right;">
-<span style="font-size:10px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
-<span style="font-size:17px; color:{'#10B981' if upside > 0 else '#EF4444'}; font-weight:800;">{'+' if upside > 0 else ''}{upside}%</span>
-</div>
-</div>
-<div style="font-size:11px; color:#FAFAFA; font-weight:700; margin-bottom:12px; padding-left:5px;">Analyst Price Targets</div>
-<div style="position:relative; height:45px; margin: 0 15px;">
-<div style="position:absolute; top:10px; left:0; right:0; height:3px; background:#27272A; border-radius:2px;"></div>
-<div style="position:absolute; top:6px; left:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%);"></div>
-<div style="position:absolute; top:20px; left:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(-50%);">{int(t_low):,}</div>
-<div style="position:absolute; top:6px; right:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(50%);"></div>
-<div style="position:absolute; top:20px; right:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(50%);">{int(t_high):,}</div>
-<div style="position:absolute; top:4px; left:{cur_pct}%; background:#FAFAFA; width:14px; height:14px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:2;"></div>
-<div style="position:absolute; top:24px; left:{cur_pct}%; font-size:11px; color:#FAFAFA; font-weight:800; transform:translateX(-50%); background:#27272A; border:1px solid #71717A; padding:2px 6px; border-radius:4px; z-index:2;">{int(harga):,}<br><span style="font-size:8px; font-weight:400;">Current</span></div>
-<div style="position:absolute; top:5px; left:{avg_pct}%; background:#3B82F6; width:12px; height:12px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:1;"></div>
-<div style="position:absolute; top:-18px; left:{avg_pct}%; font-size:11px; color:#3B82F6; font-weight:800; transform:translateX(-50%); background:#09090B; border:1px solid #3B82F6; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:1;">{int(t_mean):,}<br><span style="font-size:8px; font-weight:400;">Average</span></div>
-</div>
-</div>
-"""
+                <div class="pro-card" style="margin-top: 5px;">
+                    <div class="card-label">📊 ANALYST INSIGHTS (CONSENSUS)</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding:0 5px;">
+                        <div>
+                            <span style="font-size:10px; color:#71717A; font-weight:600;">RECOMMENDATIONS</span><br>
+                            <span class="{rec_color}" style="font-size:11px; margin-top:4px; display:inline-block;">{rec_key} ({num_analysts})</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; color:#71717A; font-weight:600;">UPSIDE POTENTIAL</span><br>
+                            <span style="font-size:17px; color:{'#10B981' if upside > 0 else '#EF4444'}; font-weight:800;">{'+' if upside > 0 else ''}{upside}%</span>
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:#FAFAFA; font-weight:700; margin-bottom:12px; padding-left:5px;">Analyst Price Targets</div>
+                    <div style="position:relative; height:45px; margin: 0 15px;">
+                        <div style="position:absolute; top:10px; left:0; right:0; height:3px; background:#27272A; border-radius:2px;"></div>
+                        <div style="position:absolute; top:6px; left:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%);"></div>
+                        <div style="position:absolute; top:20px; left:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(-50%);">{int(t_low):,}</div>
+                        <div style="position:absolute; top:6px; right:0%; background:#71717A; width:10px; height:10px; border-radius:50%; border:2px solid #050505; transform:translateX(50%);"></div>
+                        <div style="position:absolute; top:20px; right:0%; font-size:10px; font-weight:600; color:#71717A; transform:translateX(50%);">{int(t_high):,}</div>
+                        <div style="position:absolute; top:4px; left:{cur_pct}%; background:#FAFAFA; width:14px; height:14px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:2;"></div>
+                        <div style="position:absolute; top:24px; left:{cur_pct}%; font-size:11px; color:#FAFAFA; font-weight:800; transform:translateX(-50%); background:#27272A; border:1px solid #71717A; padding:2px 6px; border-radius:4px; z-index:2;">{int(harga):,}<br><span style="font-size:8px; font-weight:400;">Current</span></div>
+                        <div style="position:absolute; top:5px; left:{avg_pct}%; background:#3B82F6; width:12px; height:12px; border-radius:50%; border:2px solid #050505; transform:translateX(-50%); z-index:1;"></div>
+                        <div style="position:absolute; top:-18px; left:{avg_pct}%; font-size:11px; color:#3B82F6; font-weight:800; transform:translateX(-50%); background:#09090B; border:1px solid #3B82F6; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:1;">{int(t_mean):,}<br><span style="font-size:8px; font-weight:400;">Average</span></div>
+                    </div>
+                </div>
+                """
                 st.markdown(html_analyst, unsafe_allow_html=True)
 
     # ------------------------------------------
@@ -678,7 +737,8 @@ SIG: {serok_sig}
         
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         if not df_all.empty:
-            cols_to_export = ['TICKER', 'NAME', 'HARGA', 'AREA BELI', 'TRAILING STOP', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD', 'EPS']
+            # Kolom Export yang sudah ditambahkan VWAP & Fibonacci
+            cols_to_export = ['TICKER', 'NAME', 'HARGA', 'VWAP', 'AREA BELI', 'TRAILING STOP', 'FIBO_618', 'FIBO_500', 'SETUP_GRADE', 'SEROK_SIGNAL', 'STATUS_BANDAR', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD', 'EPS']
             safe_export_cols = [c for c in cols_to_export if c in df_all.columns]
             df_export = df_all[safe_export_cols]
             
@@ -699,26 +759,26 @@ SIG: {serok_sig}
     # ------------------------------------------
     with tab_sop:
         st.markdown("""
-<div class="sop-box">
-<div class="sop-title">Cara Penggunaan (SOP)</div>
-<ol style="margin-left: -15px;">
-<li>Buka sidebar (garis tiga di pojok kiri atas).</li>
-<li>Pilih Timeframe yang diinginkan (Daily untuk Swing, Weekly untuk Investing).</li>
-<li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari market.</li>
-<li>Buka Tab <b>DASHBOARD</b> untuk memantau 1 saham secara detail, atau buka Tab <b>CLUSTERING</b> untuk melihat saham pilihan algoritma secara massal.</li>
-<li>Gunakan Tab <b>EXPORT</b> untuk menyimpan hasil scan ke HP Anda.</li>
-</ol>
-</div>
+        <div class="sop-box">
+            <div class="sop-title">Cara Penggunaan (SOP)</div>
+            <ol style="margin-left: -15px;">
+                <li>Buka sidebar (garis tiga di pojok kiri atas).</li>
+                <li>Pilih Timeframe yang diinginkan (Daily untuk Swing, Weekly untuk Investing).</li>
+                <li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari market.</li>
+                <li>Buka Tab <b>DASHBOARD</b> untuk memantau 1 saham secara detail, atau buka Tab <b>CLUSTERING</b> untuk melihat saham pilihan algoritma secara massal.</li>
+                <li>Gunakan Tab <b>EXPORT</b> untuk menyimpan hasil scan ke HP Anda.</li>
+            </ol>
+        </div>
 
-<div class="sop-box">
-<div class="sop-title">Penjabaran Hasil Data Reel</div>
-<ul style="margin-left: -15px; margin-bottom:0;">
-<li style="margin-bottom:8px;"><b>Teknikal & MACD:</b> Menggunakan MA20 & MA50, diperkuat oleh MACD Golden Cross. Jika <i>Price > MA20</i> dan MACD Bullish, konfirmasi trend naik sangat kuat.</li>
-<li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli. Skor > 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat.</li>
-<li style="margin-bottom:8px;"><b>Bandarmologi:</b> Menganalisa anomali Volume yang melonjak (Volume Spike) lalu dikawinkan dengan bentuk <i>Candlestick shadow</i>.</li>
-<li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV, EPS & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), <b>EPS</b> adalah laba bersih per lembar saham, dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
-<li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
-</ul>
-</div>
-""", unsafe_allow_html=True)
-
+        <div class="sop-box">
+            <div class="sop-title">Penjabaran Hasil Data Reel</div>
+            <ul style="margin-left: -15px; margin-bottom:0;">
+                <li style="margin-bottom:8px;"><b>Teknikal & MACD:</b> Menggunakan MA20 & MA50, diperkuat oleh MACD Golden Cross. Jika <i>Price > MA20</i> dan MACD Bullish, konfirmasi trend naik sangat kuat.</li>
+                <li style="margin-bottom:8px;"><b>VWAP & Fibonacci:</b> Menampilkan VWAP (20 Hari) sebagai titik keseimbangan harga bandar dan <i>Fibonacci Retracement (120 Hari)</i> untuk memantau titik pantul (Support/Resistance) golden ratio 61.8% dan 50%.</li>
+                <li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli. Skor > 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat.</li>
+                <li style="margin-bottom:8px;"><b>Bandarmologi:</b> Menganalisa anomali Volume yang melonjak (Volume Spike) lalu dikawinkan dengan bentuk <i>Candlestick shadow</i>.</li>
+                <li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV, EPS & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), <b>EPS</b> adalah laba bersih per lembar saham, dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
+                <li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
