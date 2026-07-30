@@ -468,16 +468,20 @@ else:
             harga, ma20, ma50 = s.get('HARGA', 0), s.get('MA20', 0), s.get('MA50', 0) 
             pbv = s.get('PBV', 0) 
             
-            # --- ENGINE UPGRADE 1: REAL LOGO EMITEN ---
+                        # --- ENGINE UPGRADE 1: REAL LOGO EMITEN (FIXED) ---
             ticker_clean = s.get('TICKER', 'XX').replace('.JK', '').lower()
+            ticker_2_letters = s.get('TICKER', 'XX')[:2]
+            
+            # API Logo utama & API Logo cadangan (Inisial Gold premium anti-broken)
             url_logo = f"https://logo.clearbit.com/{ticker_clean}.co.id?size=100"
+            fallback_logo = f"https://ui-avatars.com/api/?name={ticker_2_letters}&background=C6A87C&color=050505&size=100&bold=true&rounded=false"
             
             html_header = f"""
             <div class="pro-card">
                 <div class="header-profile">
                     <div style="display:flex; align-items:center;">
-                        <div style="width: 45px; height: 45px; border-radius: 10px; background: white; display: flex; justify-content: center; align-items: center; margin-right: 12px; overflow: hidden; border: 1px solid #27272A; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                            <img src="{url_logo}" onerror="this.src='https://via.placeholder.com/45/C6A87C/050505?text={s.get('TICKER', 'XX')[:2]}'" style="width: 100%; height: 100%; object-fit: contain;">
+                        <div style="width: 45px; height: 45px; border-radius: 10px; background: #050505; display: flex; justify-content: center; align-items: center; margin-right: 12px; overflow: hidden; border: 1px solid #C6A87C; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                            <img src="{url_logo}" onerror="this.onerror=null; this.src='{fallback_logo}'; this.style.background='transparent';" style="width: 100%; height: 100%; object-fit: contain; background: white;">
                         </div>
                         <div>
                             <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.3</span></div>
@@ -493,32 +497,7 @@ else:
             </div>
             """ 
             st.markdown(html_header, unsafe_allow_html=True) 
-            
-            col1, col2 = st.columns([1.5, 1]) 
-            with col1: 
-                html_col1 = f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">⚡ RINGKASAN STRATEGI & YIELD%</div>
-                    <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
-                        <div>
-                            <span class="data-label">FUNDAMENTAL</span>
-                            <span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="data-label">BANDAR FLOW</span>
-                            <span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
-                        </div>
-                    </div>
-                    <div class="meter-container">
-                        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
-                    </div>
-                    <div class="meter-labels">
-                        <span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
-                    </div>
-                </div>
-                """ 
-                st.markdown(html_col1, unsafe_allow_html=True) 
-                
+
             with col2: 
                 html_col2 = f"""
                 <div class="pro-card" style="height:100%;">
