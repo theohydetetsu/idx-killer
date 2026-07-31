@@ -8,14 +8,14 @@ import warnings
 import gc 
 import json 
 import os 
-import plotly.graph_objects as go # TAMBAHAN: Untuk Chart Mewah
+import plotly.graph_objects as go 
 
 warnings.filterwarnings('ignore') 
 
 # ========================================== 
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.5) 
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.6) 
 # ========================================== 
-CACHE_FILE = "jihan_ghina_saham_cache_v1795.json" 
+CACHE_FILE = "jihan_ghina_saham_cache_v1796.json" 
 
 def load_reactive_cache(): 
     if os.path.exists(CACHE_FILE): 
@@ -42,7 +42,7 @@ if "current_tf" not in st.session_state:
 # ========================================== 
 # 1. LUXURY UI & EXTREME MOBILE CSS 
 # ========================================== 
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.5", page_icon="✨", layout="wide") 
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.6", page_icon="✨", layout="wide") 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -168,22 +168,17 @@ def get_dynamic_market_roster():
     except: 
         return master_tickers[:300] 
 
-# --- FUNGSI BARU: Tarik Data Quarterly (On-Demand agar scan tidak lelet) ---
 @st.cache_data(ttl=3600)
 def fetch_quarterly_financials(ticker):
     try:
         tkr = yf.Ticker(ticker)
-        
-        # Tarik data dari Yahoo Finance (menggunakan atribut yang benar)
         inc_stmt = tkr.quarterly_income_stmt
         if inc_stmt is None or inc_stmt.empty:
             inc_stmt = tkr.quarterly_financials
-            
         cf_stmt = tkr.quarterly_cash_flow
         if cf_stmt is None or cf_stmt.empty:
             cf_stmt = tkr.quarterly_cashflow
             
-        # Ekstrak Net Income (Laba Bersih)
         net_income_series = None
         if inc_stmt is not None and not inc_stmt.empty:
             for idx in inc_stmt.index:
@@ -193,7 +188,6 @@ def fetch_quarterly_financials(ticker):
             if net_income_series is None and "Net Income" in inc_stmt.index:
                 net_income_series = inc_stmt.loc["Net Income"]
                 
-        # Ekstrak Operating Cash Flow (Arus Kas Operasional)
         op_cf_series = None
         if cf_stmt is not None and not cf_stmt.empty:
             for idx in cf_stmt.index:
@@ -206,15 +200,11 @@ def fetch_quarterly_financials(ticker):
         if net_income_series is None and op_cf_series is None:
             return None
             
-        # Gabungkan tanggal untuk index
         dates = []
-        if net_income_series is not None:
-            dates.extend(list(net_income_series.index))
-        if op_cf_series is not None:
-            dates.extend(list(op_cf_series.index))
+        if net_income_series is not None: dates.extend(list(net_income_series.index))
+        if op_cf_series is not None: dates.extend(list(op_cf_series.index))
         dates = sorted(list(set(dates)))
         
-        # Buat DataFrame
         data = {'Date': dates, 'Net Income': [], 'Operating Cash Flow': []}
         for d in dates:
             ni_val = net_income_series.get(d, 0) if net_income_series is not None else 0
@@ -225,7 +215,6 @@ def fetch_quarterly_financials(ticker):
         df_chart = pd.DataFrame(data)
         df_chart['Date'] = pd.to_datetime(df_chart['Date'])
         df_chart = df_chart.sort_values('Date', ascending=True)
-        # Format ke bentuk Q1 2023, dll
         df_chart['Quarter'] = df_chart['Date'].dt.to_period('Q').astype(str)
         return df_chart
     except:
@@ -235,14 +224,10 @@ def format_rupiah_short(val):
     if val == 0 or pd.isna(val): return "-"
     abs_val = abs(val)
     sign = "-" if val < 0 else ""
-    if abs_val >= 1e12:
-        return f"{sign}{abs_val/1e12:.1f}T"
-    elif abs_val >= 1e9:
-        return f"{sign}{abs_val/1e9:.1f}B"
-    elif abs_val >= 1e6:
-        return f"{sign}{abs_val/1e6:.1f}M"
-    else:
-        return f"{sign}{abs_val:,.0f}"
+    if abs_val >= 1e12: return f"{sign}{abs_val/1e12:.1f}T"
+    elif abs_val >= 1e9: return f"{sign}{abs_val/1e9:.1f}B"
+    elif abs_val >= 1e6: return f"{sign}{abs_val/1e6:.1f}M"
+    else: return f"{sign}{abs_val:,.0f}"
 
 def hitung_rsi(df, periods=14): 
     delta = df['Close'].diff() 
@@ -404,6 +389,12 @@ def fetch_single_stock(emiten, mode_tf):
         rec_key = str(info.get('recommendationKey', 'none')).replace('_', ' ').upper() 
         num_analysts = info.get('numberOfAnalystOpinions', 0) 
         
+        # Tarik Data Bid / Offer
+        bid_price = info.get('bid', 0)
+        ask_price = info.get('ask', 0)
+        bid_size = info.get('bidSize', 0)
+        ask_size = info.get('askSize', 0)
+        
         return { 
             "TICKER": kode, 
             "HARGA": harga_skg, 
@@ -440,7 +431,11 @@ def fetch_single_stock(emiten, mode_tf):
             "FIBO_500": fibo_500, 
             "FIBO_618": fibo_618, 
             "FIBO_MAX": max_h, 
-            "FIBO_MIN": min_l 
+            "FIBO_MIN": min_l,
+            "BID": bid_price,
+            "ASK": ask_price,
+            "BID_SIZE": bid_size,
+            "ASK_SIZE": ask_size
         } 
     except Exception as e: 
         return None 
@@ -450,7 +445,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ========================================== 
 with st.sidebar: 
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True) 
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.5</p>", unsafe_allow_html=True) 
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.6</p>", unsafe_allow_html=True) 
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True) 
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed") 
     st.markdown("<br>", unsafe_allow_html=True) 
@@ -554,7 +549,7 @@ else:
                             <img src="{url_logo}" onerror="this.src='https://via.placeholder.com/45/C6A87C/050505?text={s.get('TICKER', 'XX')[:2]}'" style="width: 100%; height: 100%; object-fit: contain;">
                         </div>
                         <div>
-                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.5</span></div>
+                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.6</span></div>
                             <div class="ticker-desc">{s.get('NAME', '')}</div>
                             <div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
                         </div>
@@ -617,15 +612,42 @@ else:
                 cond_price = "badge-green" if harga > ma20 else "badge-red" 
                 cond_ma = "badge-green" if ma20 > ma50 else "badge-red" 
                 cond_macd = "badge-green" if s.get('MACD_BULLISH') else "badge-red" 
+                
+                bid_val = int(s.get('BID', 0))
+                ask_val = int(s.get('ASK', 0))
+                bid_size = int(s.get('BID_SIZE', 0))
+                ask_size = int(s.get('ASK_SIZE', 0))
+                
                 html_col3 = f"""
                 <div class="pro-card" style="height:100%;">
-                    <div class="card-label">📈 KONDISI HARGA & EPS</div>
+                    <div class="card-label">📈 KONDISI HARGA & BID/OFFER</div>
                     <div class="data-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <div><span class="data-label">LAST PRICE</span><span class="data-value">{int(harga):,}</span></div>
                         <div><span class="data-label">VOLATILITY</span><span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge}</span></div>
                         <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
                         <div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
                     </div>
+                    
+                    <!-- BID & OFFER MINI BOARD -->
+                    <div style="display:flex; justify-content:space-between; text-align:center; margin-top:12px; border-top:1px dashed #27272A; border-bottom:1px dashed #27272A; padding:8px 0; background: rgba(5,5,5,0.5); border-radius: 6px;">
+                        <div style="flex:1; border-right:1px solid #27272A;">
+                            <div style="font-size:8px; color:#71717A; font-weight:700;">BID VOL</div>
+                            <div style="font-size:11px; color:#10B981;">{bid_size:,}</div>
+                        </div>
+                        <div style="flex:1; border-right:1px solid #27272A;">
+                            <div style="font-size:8px; color:#71717A; font-weight:700;">BID</div>
+                            <div style="font-size:13px; color:#10B981; font-weight:800;">{bid_val:,}</div>
+                        </div>
+                        <div style="flex:1; border-right:1px solid #27272A;">
+                            <div style="font-size:8px; color:#71717A; font-weight:700;">OFFER</div>
+                            <div style="font-size:13px; color:#EF4444; font-weight:800;">{ask_val:,}</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:8px; color:#71717A; font-weight:700;">OFFR VOL</div>
+                            <div style="font-size:11px; color:#EF4444;">{ask_size:,}</div>
+                        </div>
+                    </div>
+
                     <div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
                         <span class="{cond_price}">• P>MA20</span>
                         <span class="{cond_ma}">• MA20>MA50</span>
@@ -697,7 +719,7 @@ else:
             """
             st.markdown(ai_box_html, unsafe_allow_html=True)
             
-            # --- ENGINE UPGRADE 4: KINERJA FINANSIAL QUARTERLY (PLOTLY) ---
+            # --- ENGINE UPGRADE 4: KINERJA FINANSIAL QUARTERLY (PLOTLY FIXED) ---
             st.markdown("<h4 style='color:#C6A87C; font-size:12px; font-weight:700; margin-top:20px; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;'>📊 Kinerja Finansial (Quarterly)</h4>", unsafe_allow_html=True)
             
             with st.spinner(f"Menarik data Net Income & Cash Flow {s.get('TICKER')}..."):
@@ -706,37 +728,37 @@ else:
             if df_q is not None and not df_q.empty:
                 fig = go.Figure()
                 
-                # Bar untuk Net Income
                 fig.add_trace(go.Bar(
                     x=df_q['Quarter'],
                     y=df_q['Net Income'],
-                    name='Net Income (Laba)',
-                    marker_color='#3B82F6', # Biru Elegan
+                    name='Net Income',
+                    marker_color='#3B82F6',
                     text=[format_rupiah_short(v) for v in df_q['Net Income']],
                     textposition='auto',
                     textfont=dict(color='white', size=10)
                 ))
                 
-                # Bar untuk Operating Cash Flow
                 fig.add_trace(go.Bar(
                     x=df_q['Quarter'],
                     y=df_q['Operating Cash Flow'],
-                    name='Operating Cash Flow',
-                    marker_color='#10B981', # Hijau
+                    name='Operating CF',
+                    marker_color='#10B981',
                     text=[format_rupiah_short(v) for v in df_q['Operating Cash Flow']],
                     textposition='auto',
                     textfont=dict(color='white', size=10)
                 ))
                 
+                # MENGUNCI GRAFIK AGAR TIDAK BISA DIGESER (FIXED)
                 fig.update_layout(
                     barmode='group',
+                    dragmode=False, # Mematikan fungsi zoom/pan dengan mouse
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color='#A1A1AA', size=11),
                     legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, bgcolor='rgba(0,0,0,0)'),
                     margin=dict(l=0, r=0, t=30, b=0),
-                    yaxis=dict(gridcolor='#27272A', zerolinecolor='#27272A', showticklabels=False),
-                    xaxis=dict(gridcolor='rgba(0,0,0,0)'),
+                    yaxis=dict(gridcolor='#27272A', zerolinecolor='#27272A', showticklabels=False, fixedrange=True), # Lock Y-Axis
+                    xaxis=dict(gridcolor='rgba(0,0,0,0)', fixedrange=True), # Lock X-Axis
                     height=280
                 )
                 
@@ -744,50 +766,22 @@ else:
             else:
                 st.markdown("<div style='background:rgba(239, 68, 68, 0.1); border:1px solid #EF4444; border-radius:6px; padding:10px; font-size:11px; color:#EF4444; text-align:center;'>Data Kuartalan tidak tersedia di database untuk emiten ini.</div>", unsafe_allow_html=True)
 
-            # Kalkulator Money Management
-            st.markdown("<h4 style='color:#C6A87C; font-size:12px; font-weight:700; margin-top:20px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;'>🧮 Kalkulator Position Sizing</h4>", unsafe_allow_html=True)
-            
-            calc_col1, calc_col2 = st.columns(2)
-            with calc_col1:
-                st.markdown("<div style='font-size:11px; color:#A1A1AA; margin-bottom:4px;'>Modal Trading Aktif (Rp)</div>", unsafe_allow_html=True)
-                modal_awal = st.number_input("Modal", min_value=100000, value=10000000, step=1000000, key=f"modal_{s.get('TICKER')}", label_visibility="collapsed")
-            with calc_col2:
-                st.markdown("<div style='font-size:11px; color:#A1A1AA; margin-bottom:4px;'>Toleransi Risiko Kerugian (%)</div>", unsafe_allow_html=True)
-                risiko_pct = st.number_input("Risiko", min_value=0.5, value=2.0, step=0.5, key=f"risk_{s.get('TICKER')}", label_visibility="collapsed")
-                
-            area_beli = int(s.get('AREA BELI', 0))
-            stop_loss = int(s.get('TRAILING STOP', 0))
-            
-            if area_beli > stop_loss:
-                uang_risiko = modal_awal * (risiko_pct / 100)
-                risiko_per_lembar = area_beli - stop_loss
-                maks_lembar = uang_risiko / risiko_per_lembar
-                maks_lot = int(maks_lembar / 100)
-                
-                if maks_lot < 1: maks_lot = 0
-                total_beli = maks_lot * 100 * area_beli
-                
-                html_calc = f"""
-                <div class="pro-card" style="margin-top: 5px; border-left: 3px solid #10B981;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom: 1px dashed #27272A; padding-bottom: 8px;">
-                        <div>
-                            <span style="font-size:10px; color:#71717A; font-weight:600; text-transform:uppercase;">Maksimal Kerugian (Risk)</span><br>
-                            <span style="font-size:14px; color:#EF4444; font-weight:800;">Rp {int(uang_risiko):,}</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="font-size:10px; color:#71717A; font-weight:600; text-transform:uppercase;">Total Nilai Pembelian</span><br>
-                            <span style="font-size:14px; color:#FAFAFA; font-weight:800;">Rp {int(total_beli):,}</span>
-                        </div>
-                    </div>
-                    <div style="text-align:center; padding-top:4px;">
-                        <span style="font-size:11px; color:#A1A1AA; font-weight:600; text-transform:uppercase;">Rekomendasi Pembelian Aman</span><br>
-                        <span style="font-size:28px; color:#10B981; font-weight:900;">{maks_lot:,} <span style="font-size:14px;">LOT</span></span>
-                    </div>
-                </div>
-                """
-                st.markdown(html_calc, unsafe_allow_html=True)
-            else:
-                st.warning("⚠️ Harga Stop Loss lebih tinggi atau sama dengan Area Beli. Kalkulasi manajemen risiko tidak dapat diproses.")
+            # --- KEMBALINYA PRICE ANALYSIS INSIGHT ---
+            vwap_val = s.get('VWAP', 0) 
+            dist_ma20 = ((harga - ma20) / ma20) * 100 if ma20 > 0 else 0
+            dist_vwap = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0
+
+            insight_html = f"""
+            <div class="pro-card" style="margin-top: 15px; border-left: 3px solid #3B82F6;">
+                <div class="card-label" style="border:none; margin-bottom:8px; color:#3B82F6;">🧠 PRICE ANALYSIS INSIGHT</div>
+                <ul style="font-size:11px; color:#D4D4D8; padding-left:15px; margin-bottom:0; line-height:1.6;">
+                    <li style="margin-bottom:6px;">Harga saat ini <b>{int(harga):,}</b> berada <b style="color:{'#10B981' if dist_ma20 > 0 else '#EF4444'};">{abs(dist_ma20):.1f}% {'di atas' if dist_ma20 > 0 else 'di bawah'}</b> garis ekuilibrium jangka pendek (MA20: {int(ma20):,}).</li>
+                    <li style="margin-bottom:6px;">Secara intraday, harga <b style="color:{'#10B981' if dist_vwap > 0 else '#EF4444'};">{abs(dist_vwap):.1f}% {'lebih tinggi' if dist_vwap > 0 else 'lebih rendah'}</b> dari rata-rata volume tertimbang bandar (VWAP: {int(vwap_val):,}). {'Dorongan beli sedang solid.' if dist_vwap > 0 else 'Waspada potensi tekanan jual lebih lanjut.'}</li>
+                    <li>Batas pengaman / <i>Stop Loss</i> krusial disarankan pada area <b>{int(s.get('TRAILING STOP', 0)):,}</b>. Disiplin *Cut Loss* jika harga *breakdown* dan ditutup (closing) di bawah level ini.</li>
+                </ul>
+            </div>
+            """
+            st.markdown(insight_html, unsafe_allow_html=True)
                 
             col7, col8 = st.columns([1.5, 1]) 
             with col7: 
@@ -819,8 +813,7 @@ else:
                 st.markdown(html_col7, unsafe_allow_html=True) 
                 
             with col8: 
-                vwap_val = s.get('VWAP', 0) 
-                vwap_diff = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0 
+                vwap_diff_pct = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0 
                 vwap_badge = "badge-green" if harga > vwap_val else "badge-red" 
                 vwap_text = "BULLISH (P > VWAP)" if harga > vwap_val else "BEARISH (P < VWAP)" 
                 html_col8 = f"""
@@ -828,7 +821,7 @@ else:
                     <div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚖️ VWAP (20D)</div>
                     <div style="font-size:22px; font-weight:800; color:{'#10B981' if harga > vwap_val else '#EF4444'}; margin-top:4px;">{int(vwap_val):,}</div>
                     <div style="color:#71717A; font-size:10px; margin-top:4px;">
-                        Gap to VWAP: <b style="color:{'#10B981' if vwap_diff > 0 else '#EF4444'};">{vwap_diff:+.2f}%</b>
+                        Gap to VWAP: <b style="color:{'#10B981' if vwap_diff_pct > 0 else '#EF4444'};">{vwap_diff_pct:+.2f}%</b>
                     </div>
                     <div style="margin-top:8px;">
                         <span class="{vwap_badge}" style="font-size:9px; padding:3px 6px;">{vwap_text}</span>
@@ -946,7 +939,7 @@ else:
             <ol style="margin-left: -15px;">
                 <li>Buka sidebar (garis tiga di pojok kiri atas).</li>
                 <li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari market.</li>
-                <li>Buka Tab <b>DASHBOARD</b> untuk memantau detail 1 saham, termasuk <b>Visualisasi Chart Quarterly</b> (Baru).</li>
+                <li>Buka Tab <b>DASHBOARD</b> untuk memantau detail 1 saham.</li>
             </ol>
         </div>
         """, unsafe_allow_html=True)
