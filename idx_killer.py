@@ -13,9 +13,9 @@ import plotly.graph_objects as go
 warnings.filterwarnings('ignore') 
 
 # ========================================== 
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.6) 
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.7) 
 # ========================================== 
-CACHE_FILE = "jihan_ghina_saham_cache_v1796.json" 
+CACHE_FILE = "jihan_ghina_saham_cache_v1797.json" 
 
 def load_reactive_cache(): 
     if os.path.exists(CACHE_FILE): 
@@ -42,7 +42,7 @@ if "current_tf" not in st.session_state:
 # ========================================== 
 # 1. LUXURY UI & EXTREME MOBILE CSS 
 # ========================================== 
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.6", page_icon="✨", layout="wide") 
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.7", page_icon="✨", layout="wide") 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -65,7 +65,6 @@ div[data-baseweb="select"] span { color: #FAFAFA !important; font-weight: 600 !i
 /* Gold Accents */
 .card-label { color: #C6A87C; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #27272A; padding-bottom: 6px;}
 .header-profile { display: flex; justify-content: space-between; align-items: center; }
-.logo-circle { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #C6A87C 0%, #8E793E 100%); display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 800; color: #050505; margin-right: 12px;}
 .ticker-title { font-size: 24px; font-weight: 800; color: #FAFAFA; line-height: 1.1; display:flex; align-items:center; gap: 6px;}
 .ticker-desc { color: #A1A1AA; font-size: 12px; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;}
 /* Refined Badges */
@@ -445,7 +444,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ========================================== 
 with st.sidebar: 
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True) 
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.6</p>", unsafe_allow_html=True) 
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.7</p>", unsafe_allow_html=True) 
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True) 
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed") 
     st.markdown("<br>", unsafe_allow_html=True) 
@@ -549,7 +548,7 @@ else:
                             <img src="{url_logo}" onerror="this.src='https://via.placeholder.com/45/C6A87C/050505?text={s.get('TICKER', 'XX')[:2]}'" style="width: 100%; height: 100%; object-fit: contain;">
                         </div>
                         <div>
-                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.6</span></div>
+                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.7</span></div>
                             <div class="ticker-desc">{s.get('NAME', '')}</div>
                             <div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
                         </div>
@@ -677,29 +676,7 @@ else:
                 """ 
                 st.markdown(html_col4, unsafe_allow_html=True) 
                 
-            col5, col6 = st.columns([1.5, 1]) 
-            with col5: 
-                html_col5 = f"""
-                <div class="pro-card" style="height:100%;">
-                    <div class="card-label">🛡️ KEPUTUSAN STRATEGI</div>
-                    <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 8px;">
-                        <div style="color: {action_color}; font-size: 16px; font-weight: 800;">{action_text}</div>
-                    </div>
-                    <div style="color:#A1A1AA; font-size:11px;">Status Setup: <b style="color:#C6A87C;">{grade}</b></div>
-                </div>
-                """ 
-                st.markdown(html_col5, unsafe_allow_html=True) 
-                
-            with col6: 
-                html_col6 = f"""
-                <div class="pro-card" style="height:100%; text-align:center; display:flex; flex-direction:column; justify-content:center;">
-                    <div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚡ ENGINE SIGNAL</div>
-                    <div style="font-size:14px; font-weight:800; color:#10B981; margin-top:4px;">{serok_sig}</div>
-                    <div style="color:#71717A; font-size:9px; margin-top:2px;">AI Validation Active</div>
-                </div>
-                """ 
-                st.markdown(html_col6, unsafe_allow_html=True) 
-
+            # --- KOTAK KEPUTUSAN STRATEGI UTAMA (MERGE DENGAN ENTRY, STOP LOSS & AI CONCLUSION) ---
             if "BUY" in action_text or "ACCUMULATE" in action_text:
                 ai_insight = f"Sinyal Beli Kuat! Terdeteksi {status_bandar} di area krusial. Momentum didukung oleh sinyal {serok_sig}. Eksekusi di area ini memberikan potensi pantulan (Jackpot) dengan risiko Cut Loss yang sangat terukur."
             elif "SPECULATIVE" in action_text:
@@ -707,17 +684,39 @@ else:
             else:
                 ai_insight = f"Wait & See. Tekanan jual masih mendominasi atau harga tertahan di area nanggung ({status_bandar}). Sebaiknya pantau pergerakan harga hingga kembali masuk ke area Support / Entry Area sebelum mengambil keputusan."
 
-            ai_box_html = f"""
-            <div style="background-color: rgba(198, 168, 124, 0.05); border-left: 4px solid #C6A87C; padding: 14px; border-radius: 6px; margin-bottom: 12px; border-top: 1px solid #27272A; border-right: 1px solid #27272A; border-bottom: 1px solid #27272A;">
-                <div style="color: #C6A87C; font-weight: 800; font-size: 11px; margin-bottom: 6px; display: flex; align-items: center; letter-spacing: 1px;">
-                    <span style="font-size: 14px; margin-right: 6px;">🤖</span> AI EXECUTIVE CONCLUSION
+            master_strategy_box = f"""
+            <div class="pro-card" style="border: 2px solid {action_color}; background: linear-gradient(145deg, #18181B, #09090B);">
+                <div class="card-label" style="color: {action_color}; justify-content: space-between;">
+                    <span>🛡️ PUSAT KEPUTUSAN STRATEGI FINAL</span>
+                    <span>{grade}</span>
                 </div>
-                <div style="font-size: 12px; color: #D4D4D8; line-height: 1.5;">
-                    {ai_insight}
+                <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 12px;">
+                    <div style="color: {action_color}; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">{action_text}</div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-around; align-items:center; background: rgba(5,5,5,0.6); border: 1px solid #27272A; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align:center;">
+                    <div>
+                        <div style="font-size:9px; color:#71717A; text-transform:uppercase; font-weight:700;">🎯 Entry Area</div>
+                        <div style="font-size:16px; font-weight:800; color:#FAFAFA; margin-top:2px;">{int(s.get('AREA BELI', 0)):,}</div>
+                    </div>
+                    <div style="width:1px; background:#27272A; height:30px;"></div>
+                    <div>
+                        <div style="font-size:9px; color:#71717A; text-transform:uppercase; font-weight:700;">🚨 Stop Loss</div>
+                        <div style="font-size:16px; font-weight:800; color:#EF4444; margin-top:2px;">{int(s.get('TRAILING STOP', 0)):,}</div>
+                    </div>
+                </div>
+
+                <div style="background-color: rgba(198, 168, 124, 0.05); border-left: 4px solid #C6A87C; padding: 12px; border-radius: 6px; border: 1px solid #27272A;">
+                    <div style="color: #C6A87C; font-weight: 800; font-size: 10px; margin-bottom: 4px; display: flex; align-items: center; letter-spacing: 1px;">
+                        <span style="font-size: 12px; margin-right: 6px;">🤖</span> AI EXECUTIVE CONCLUSION
+                    </div>
+                    <div style="font-size: 11px; color: #D4D4D8; line-height: 1.5;">
+                        {ai_insight}
+                    </div>
                 </div>
             </div>
             """
-            st.markdown(ai_box_html, unsafe_allow_html=True)
+            st.markdown(master_strategy_box, unsafe_allow_html=True)
             
             # --- ENGINE UPGRADE 4: KINERJA FINANSIAL QUARTERLY (PLOTLY FIXED) ---
             st.markdown("<h4 style='color:#C6A87C; font-size:12px; font-weight:700; margin-top:20px; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;'>📊 Kinerja Finansial (Quarterly)</h4>", unsafe_allow_html=True)
@@ -751,37 +750,20 @@ else:
                 # MENGUNCI GRAFIK AGAR TIDAK BISA DIGESER (FIXED)
                 fig.update_layout(
                     barmode='group',
-                    dragmode=False, # Mematikan fungsi zoom/pan dengan mouse
+                    dragmode=False, 
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color='#A1A1AA', size=11),
                     legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, bgcolor='rgba(0,0,0,0)'),
                     margin=dict(l=0, r=0, t=30, b=0),
-                    yaxis=dict(gridcolor='#27272A', zerolinecolor='#27272A', showticklabels=False, fixedrange=True), # Lock Y-Axis
-                    xaxis=dict(gridcolor='rgba(0,0,0,0)', fixedrange=True), # Lock X-Axis
+                    yaxis=dict(gridcolor='#27272A', zerolinecolor='#27272A', showticklabels=False, fixedrange=True), 
+                    xaxis=dict(gridcolor='rgba(0,0,0,0)', fixedrange=True), 
                     height=280
                 )
                 
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             else:
                 st.markdown("<div style='background:rgba(239, 68, 68, 0.1); border:1px solid #EF4444; border-radius:6px; padding:10px; font-size:11px; color:#EF4444; text-align:center;'>Data Kuartalan tidak tersedia di database untuk emiten ini.</div>", unsafe_allow_html=True)
-
-            # --- KEMBALINYA PRICE ANALYSIS INSIGHT ---
-            vwap_val = s.get('VWAP', 0) 
-            dist_ma20 = ((harga - ma20) / ma20) * 100 if ma20 > 0 else 0
-            dist_vwap = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0
-
-            insight_html = f"""
-            <div class="pro-card" style="margin-top: 15px; border-left: 3px solid #3B82F6;">
-                <div class="card-label" style="border:none; margin-bottom:8px; color:#3B82F6;">🧠 PRICE ANALYSIS INSIGHT</div>
-                <ul style="font-size:11px; color:#D4D4D8; padding-left:15px; margin-bottom:0; line-height:1.6;">
-                    <li style="margin-bottom:6px;">Harga saat ini <b>{int(harga):,}</b> berada <b style="color:{'#10B981' if dist_ma20 > 0 else '#EF4444'};">{abs(dist_ma20):.1f}% {'di atas' if dist_ma20 > 0 else 'di bawah'}</b> garis ekuilibrium jangka pendek (MA20: {int(ma20):,}).</li>
-                    <li style="margin-bottom:6px;">Secara intraday, harga <b style="color:{'#10B981' if dist_vwap > 0 else '#EF4444'};">{abs(dist_vwap):.1f}% {'lebih tinggi' if dist_vwap > 0 else 'lebih rendah'}</b> dari rata-rata volume tertimbang bandar (VWAP: {int(vwap_val):,}). {'Dorongan beli sedang solid.' if dist_vwap > 0 else 'Waspada potensi tekanan jual lebih lanjut.'}</li>
-                    <li>Batas pengaman / <i>Stop Loss</i> krusial disarankan pada area <b>{int(s.get('TRAILING STOP', 0)):,}</b>. Disiplin *Cut Loss* jika harga *breakdown* dan ditutup (closing) di bawah level ini.</li>
-                </ul>
-            </div>
-            """
-            st.markdown(insight_html, unsafe_allow_html=True)
                 
             col7, col8 = st.columns([1.5, 1]) 
             with col7: 
@@ -813,6 +795,7 @@ else:
                 st.markdown(html_col7, unsafe_allow_html=True) 
                 
             with col8: 
+                vwap_val = s.get('VWAP', 0)
                 vwap_diff_pct = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0 
                 vwap_badge = "badge-green" if harga > vwap_val else "badge-red" 
                 vwap_text = "BULLISH (P > VWAP)" if harga > vwap_val else "BEARISH (P < VWAP)" 
@@ -870,6 +853,23 @@ else:
                 </div>
                 """ 
                 st.markdown(html_analyst, unsafe_allow_html=True) 
+
+            # --- KOTAK PRICE ANALYSIS INSIGHT DI PALING BAWAH ---
+            dist_ma20 = ((harga - ma20) / ma20) * 100 if ma20 > 0 else 0
+            vwap_val = s.get('VWAP', 0)
+            dist_vwap = ((harga - vwap_val) / vwap_val) * 100 if vwap_val > 0 else 0
+
+            insight_html = f"""
+            <div class="pro-card" style="margin-top: 15px; border-left: 3px solid #3B82F6;">
+                <div class="card-label" style="border:none; margin-bottom:8px; color:#3B82F6;">🧠 PRICE ANALYSIS INSIGHT</div>
+                <ul style="font-size:11px; color:#D4D4D8; padding-left:15px; margin-bottom:0; line-height:1.6;">
+                    <li style="margin-bottom:6px;">Harga saat ini <b>{int(harga):,}</b> berada <b style="color:{'#10B981' if dist_ma20 > 0 else '#EF4444'};">{abs(dist_ma20):.1f}% {'di atas' if dist_ma20 > 0 else 'di bawah'}</b> garis ekuilibrium jangka pendek (MA20: {int(ma20):,}).</li>
+                    <li style="margin-bottom:6px;">Secara intraday, harga <b style="color:{'#10B981' if dist_vwap > 0 else '#EF4444'};">{abs(dist_vwap):.1f}% {'lebih tinggi' if dist_vwap > 0 else 'lebih rendah'}</b> dari rata-rata volume tertimbang bandar (VWAP: {int(vwap_val):,}). {'Dorongan beli sedang solid.' if dist_vwap > 0 else 'Waspada potensi tekanan jual lebih lanjut.'}</li>
+                    <li>Batas pengaman / <i>Stop Loss</i> krusial disarankan pada area <b>{int(s.get('TRAILING STOP', 0)):,}</b>. Disiplin *Cut Loss* jika harga *breakdown* dan ditutup (closing) di bawah level ini.</li>
+                </ul>
+            </div>
+            """
+            st.markdown(insight_html, unsafe_allow_html=True)
 
     # ------------------------------------------ 
     # TAB 2: CLUSTERING OTOMATIS 
