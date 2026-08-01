@@ -13,9 +13,9 @@ import plotly.graph_objects as go
 warnings.filterwarnings('ignore') 
 
 # ========================================== 
-# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.7) 
+# 0. REACTIVE ENGINE & PERSISTENT CACHE (V17.9.8) 
 # ========================================== 
-CACHE_FILE = "jihan_ghina_saham_cache_v1797.json" 
+CACHE_FILE = "jihan_ghina_saham_cache_v1798.json" 
 
 def load_reactive_cache(): 
     if os.path.exists(CACHE_FILE): 
@@ -42,7 +42,7 @@ if "current_tf" not in st.session_state:
 # ========================================== 
 # 1. LUXURY UI & EXTREME MOBILE CSS 
 # ========================================== 
-st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.7", page_icon="✨", layout="wide") 
+st.set_page_config(page_title="JIHAN-GHINA Ultimate v17.9.8", page_icon="✨", layout="wide") 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -444,7 +444,7 @@ def fetch_single_stock(emiten, mode_tf):
 # ========================================== 
 with st.sidebar: 
     st.markdown("<h2 style='color:#C6A87C; font-size:16px; font-weight:800; margin-bottom:0;'>✨ J-G ULTIMATE</h2>", unsafe_allow_html=True) 
-    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.7</p>", unsafe_allow_html=True) 
+    st.markdown("<p style='color:#71717A; font-size:9px; letter-spacing:1px; margin-bottom:20px;'>EDITION V17.9.8</p>", unsafe_allow_html=True) 
     st.markdown("<div style='font-size:10px; color:#A1A1AA; margin-bottom:5px;'>⏱️ Timeframe:</div>", unsafe_allow_html=True) 
     tf_pilihan = st.selectbox("TF", ("1 Hari (Daily)", "1 Minggu (Weekly)"), index=0, label_visibility="collapsed") 
     st.markdown("<br>", unsafe_allow_html=True) 
@@ -548,7 +548,7 @@ else:
                             <img src="{url_logo}" onerror="this.src='https://via.placeholder.com/45/C6A87C/050505?text={s.get('TICKER', 'XX')[:2]}'" style="width: 100%; height: 100%; object-fit: contain;">
                         </div>
                         <div>
-                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.7</span></div>
+                            <div class="ticker-title">{s.get('TICKER', '')} <span class="badge-primary">V17.9.8</span></div>
                             <div class="ticker-desc">{s.get('NAME', '')}</div>
                             <div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Unknown Sector')} &bull; {s.get('INDUSTRY', 'Unknown Industry')}</div>
                         </div>
@@ -568,21 +568,11 @@ else:
                 <div class="pro-card" style="height:100%;">
                     <div class="card-label">⚡ RINGKASAN STRATEGI & YIELD%</div>
                     <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
-                        <div>
-                            <span class="data-label">FUNDAMENTAL</span>
-                            <span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="data-label">BANDAR FLOW</span>
-                            <span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span>
-                        </div>
+                        <div><span class="data-label">FUNDAMENTAL</span><span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span></div>
+                        <div style="text-align:right;"><span class="data-label">BANDAR FLOW</span><span class="data-value" style="font-size:15px; color: {'#10B981' if 'AKUMULASI' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span></div>
                     </div>
-                    <div class="meter-container">
-                        <div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div>
-                    </div>
-                    <div class="meter-labels">
-                        <span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
-                    </div>
+                    <div class="meter-container"><div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div></div>
+                    <div class="meter-labels"><span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span></div>
                 </div>
                 """ 
                 st.markdown(html_col1, unsafe_allow_html=True) 
@@ -592,16 +582,10 @@ else:
                 <div class="pro-card" style="height:100%;">
                     <div class="card-label">🌐 SMART MONEY</div>
                     <div style="text-align:center; margin: 4px 0;">
-                        <div style="font-size:30px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">
-                            {vol/1000000:.1f}M
-                        </div>
-                        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">
-                            {'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}
-                        </div>
+                        <div style="font-size:30px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">{vol/1000000:.1f}M</div>
+                        <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">{'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}</div>
                     </div>
-                    <div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">
-                        SIG: {serok_sig}
-                    </div>
+                    <div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">SIG: {serok_sig}</div>
                 </div>
                 """ 
                 st.markdown(html_col2, unsafe_allow_html=True) 
@@ -626,8 +610,6 @@ else:
                         <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
                         <div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
                     </div>
-                    
-                    <!-- BID & OFFER MINI BOARD -->
                     <div style="display:flex; justify-content:space-between; text-align:center; margin-top:12px; border-top:1px dashed #27272A; border-bottom:1px dashed #27272A; padding:8px 0; background: rgba(5,5,5,0.5); border-radius: 6px;">
                         <div style="flex:1; border-right:1px solid #27272A;">
                             <div style="font-size:8px; color:#71717A; font-weight:700;">BID VOL</div>
@@ -646,7 +628,6 @@ else:
                             <div style="font-size:11px; color:#EF4444;">{ask_size:,}</div>
                         </div>
                     </div>
-
                     <div style="margin-top:10px; display:flex; gap:4px; flex-wrap:wrap;">
                         <span class="{cond_price}">• P>MA20</span>
                         <span class="{cond_ma}">• MA20>MA50</span>
@@ -693,7 +674,6 @@ else:
                 <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 12px;">
                     <div style="color: {action_color}; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">{action_text}</div>
                 </div>
-                
                 <div style="display:flex; justify-content:space-around; align-items:center; background: rgba(5,5,5,0.6); border: 1px solid #27272A; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align:center;">
                     <div>
                         <div style="font-size:9px; color:#71717A; text-transform:uppercase; font-weight:700;">🎯 Entry Area</div>
@@ -705,14 +685,11 @@ else:
                         <div style="font-size:16px; font-weight:800; color:#EF4444; margin-top:2px;">{int(s.get('TRAILING STOP', 0)):,}</div>
                     </div>
                 </div>
-
                 <div style="background-color: rgba(198, 168, 124, 0.05); border-left: 4px solid #C6A87C; padding: 12px; border-radius: 6px; border: 1px solid #27272A;">
                     <div style="color: #C6A87C; font-weight: 800; font-size: 10px; margin-bottom: 4px; display: flex; align-items: center; letter-spacing: 1px;">
                         <span style="font-size: 12px; margin-right: 6px;">🤖</span> AI EXECUTIVE CONCLUSION
                     </div>
-                    <div style="font-size: 11px; color: #D4D4D8; line-height: 1.5;">
-                        {ai_insight}
-                    </div>
+                    <div style="font-size: 11px; color: #D4D4D8; line-height: 1.5;">{ai_insight}</div>
                 </div>
             </div>
             """
@@ -771,24 +748,19 @@ else:
                 <div class="pro-card" style="height:100%; margin-top:10px;">
                     <div class="card-label">📏 FIBONACCI RETRACEMENT (120D)</div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; padding-bottom:4px; border-bottom:1px dashed #27272A;">
-                        <span style="color:#71717A;">100% (High)</span>
-                        <span style="color:#FAFAFA;">{int(s.get('FIBO_MAX',0)):,}</span>
+                        <span style="color:#71717A;">100% (High)</span><span style="color:#FAFAFA;">{int(s.get('FIBO_MAX',0)):,}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-                        <span style="color:#A1A1AA;">61.8% (Golden Pocket)</span>
-                        <span style="color:#C6A87C; font-weight:700;">{int(s.get('FIBO_618',0)):,}</span>
+                        <span style="color:#A1A1AA;">61.8% (Golden Pocket)</span><span style="color:#C6A87C; font-weight:700;">{int(s.get('FIBO_618',0)):,}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-                        <span style="color:#A1A1AA;">50.0% (Equilibrium)</span>
-                        <span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_500',0)):,}</span>
+                        <span style="color:#A1A1AA;">50.0% (Equilibrium)</span><span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_500',0)):,}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-                        <span style="color:#A1A1AA;">38.2%</span>
-                        <span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_382',0)):,}</span>
+                        <span style="color:#A1A1AA;">38.2%</span><span style="color:#FAFAFA; font-weight:600;">{int(s.get('FIBO_382',0)):,}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; padding-top:4px; border-top:1px dashed #27272A;">
-                        <span style="color:#71717A;">0% (Low)</span>
-                        <span style="color:#FAFAFA;">{int(s.get('FIBO_MIN',0)):,}</span>
+                        <span style="color:#71717A;">0% (Low)</span><span style="color:#FAFAFA;">{int(s.get('FIBO_MIN',0)):,}</span>
                     </div>
                 </div>
                 """ 
@@ -803,12 +775,8 @@ else:
                 <div class="pro-card" style="height:100%; margin-top:10px; text-align:center; display:flex; flex-direction:column; justify-content:center;">
                     <div class="card-label" style="justify-content:center; border:none; margin-bottom:0;">⚖️ VWAP (20D)</div>
                     <div style="font-size:22px; font-weight:800; color:{'#10B981' if harga > vwap_val else '#EF4444'}; margin-top:4px;">{int(vwap_val):,}</div>
-                    <div style="color:#71717A; font-size:10px; margin-top:4px;">
-                        Gap to VWAP: <b style="color:{'#10B981' if vwap_diff_pct > 0 else '#EF4444'};">{vwap_diff_pct:+.2f}%</b>
-                    </div>
-                    <div style="margin-top:8px;">
-                        <span class="{vwap_badge}" style="font-size:9px; padding:3px 6px;">{vwap_text}</span>
-                    </div>
+                    <div style="color:#71717A; font-size:10px; margin-top:4px;">Gap to VWAP: <b style="color:{'#10B981' if vwap_diff_pct > 0 else '#EF4444'};">{vwap_diff_pct:+.2f}%</b></div>
+                    <div style="margin-top:8px;"><span class="{vwap_badge}" style="font-size:9px; padding:3px 6px;">{vwap_text}</span></div>
                 </div>
                 """ 
                 st.markdown(html_col8, unsafe_allow_html=True) 
