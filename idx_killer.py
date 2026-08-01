@@ -905,12 +905,25 @@ else:
     # ------------------------------------------
     with tab_sop:
         st.markdown("""
-        <div class="sop-box">
-            <div class="sop-title">Cara Penggunaan (SOP)</div>
-            <ol style="margin-left: -15px;">
-                <li>Buka sidebar (garis tiga di pojok kiri atas).</li>
-                <li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari pasar.</li>
-                <li>Buka Tab <b>DASHBOARD</b> untuk menyatukan detail 1 saham.</li>
-            </ol>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="sop-box">
+<div class="sop-title">Cara Penggunaan (SOP)</div>
+<ol style="margin-left: -15px;">
+<li>Buka sidebar (garis tiga di pojok kiri atas).</li>
+<li>Pilih Timeframe yang diinginkan (Daily untuk Swing, Weekly untuk Investing).</li>
+<li>Tekan tombol <b>🔄 SCAN</b> untuk mengumpulkan data terbaru dari market.</li>
+<li>Buka Tab <b>DASHBOARD</b> untuk memantau 1 saham secara detail, atau buka Tab <b>CLUSTERING</b> untuk melihat saham pilihan algoritma secara massal.</li>
+<li>Gunakan Tab <b>EXPORT</b> untuk menyimpan hasil scan ke HP Anda.</li>
+</ol>
+</div>
+
+<div class="sop-box">
+<div class="sop-title">Penjabaran Hasil Data Reel</div>
+<ul style="margin-left: -15px; margin-bottom:0;">
+<li style="margin-bottom:8px;"><b>Teknikal & MACD:</b> Menggunakan MA20 & MA50, diperkuat oleh MACD Golden Cross. Jika <i>Price > MA20</i> dan MACD Bullish, konfirmasi trend naik sangat kuat.</li>
+<li style="margin-bottom:8px;"><b>WPI (Whale Pressure Index):</b> Indikator skor dari 0-100 yang mengukur seberapa kuat tekanan pembeli. Skor > 70 menunjukkan dominasi <i>buyer/bandar</i> yang kuat.</li>
+<li style="margin-bottom:8px;"><b>Bandarmologi:</b> Menganalisa anomali Volume yang melonjak (Volume Spike) lalu dikawinkan dengan bentuk <i>Candlestick shadow</i>.</li>
+<li style="margin-bottom:8px;"><b>Fundamental (ROE, PBV, EPS & YIELD):</b> <b>ROE</b> efisiensi laba (>10%), <b>PBV</b> valuasi saham (semakin rendah = murah), <b>EPS</b> adalah laba bersih per lembar saham, dan <b>YIELD</b> keuntungan dari Dividen rutin.</li>
+<li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
+</ul>
+</div>
+""", unsafe_allow_html=True)
