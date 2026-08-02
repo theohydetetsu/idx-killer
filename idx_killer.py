@@ -926,7 +926,11 @@ else:
 <li style="margin-bottom:8px;"><b>Analyst Insights:</b> Data konsensus dari analis Wall Street yang menampilkan target proyeksi harga rata-rata institusi asing terhadap emiten tersebut.</li>
 </ul>
 </div>
-""", unsafe_allow_html=True) streamlit as st
+""", unsafe_allow_html=True) 
+
+
+
+streamlit as st
 import pandas as pd
 import yfinance as yf
 import numpy as np
