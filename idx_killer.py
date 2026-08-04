@@ -62,6 +62,8 @@ div[data-baseweb="select"] span { color: #FAFAFA !important; font-weight: 600 !i
 .badge-green { background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);}
 .badge-red { background: rgba(239, 68, 68, 0.1); color: #EF4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);}
 .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);}
+.score-box { background: #050505; border: 1px solid #27272A; border-radius: 8px; padding: 10px 14px; text-align: center; }
+.score-value { font-size: 32px; font-weight: 800; color: #C6A87C; line-height: 1; margin: 4px 0;}
 .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px;}
 .data-label { font-size: 10px; color: #71717A; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; display: block;}
 .data-value { font-size: 14px; color: #FAFAFA; font-weight: 700; display: block;}
@@ -78,6 +80,8 @@ div[data-baseweb="input"] input { color: #FAFAFA !important; font-size: 13px !im
 @media (max-width: 768px) {
     .ticker-title { font-size: 18px; }
     .ticker-desc { font-size: 11px; max-width: 140px; white-space: normal; line-height: 1.2; }
+    .score-box { padding: 6px 10px; }
+    .score-value { font-size: 24px; }
     .data-grid { grid-template-columns: 1fr 1fr !important; }
     .market-banner { flex-direction: column; text-align: center; gap: 6px; }
 }
@@ -379,21 +383,6 @@ def fetch_single_stock(emiten, mode_tf):
             div_yield = (raw_yield * 100) if (raw_yield and raw_yield < 1) else (raw_yield if raw_yield else 0.0)
         div_yield = round(div_yield, 2)
         
-        # EXTRACT DIVIDEND DATE
-        div_date_ts = info.get('exDividendDate', None)
-        if div_date_ts:
-            try:
-                div_date = datetime.fromtimestamp(div_date_ts).strftime('%Y-%m-%d')
-            except:
-                div_date = "-"
-        else:
-            div_date = "-"
-            
-        # EXTRACT FREE FLOAT
-        float_shares = info.get('floatShares', 0)
-        shares_out = info.get('sharesOutstanding', 0)
-        free_float_pct = (float_shares / shares_out * 100) if shares_out and float_shares else 0.0
-        
         roe_raw = info.get('returnOnEquity', 0)
         roe_pct = round(roe_raw * 100, 2) if roe_raw else 0.0
         
@@ -434,8 +423,6 @@ def fetch_single_stock(emiten, mode_tf):
             "ROE": roe_pct,
             "YIELD": f"{div_yield}%",
             "YIELD_RAW": div_yield,
-            "DIV_DATE": div_date,
-            "FREE_FLOAT": round(free_float_pct, 2),
             "PBV": pbv_val,
             "EPS": eps_val,
             "RET_1D": ((harga_skg - prev_close) / prev_close * 100),
@@ -580,7 +567,6 @@ else:
             ticker_clean = s.get('TICKER', 'XX').replace('.JK', '').lower()
             url_logo = f"https://logo.clearbit.com/{ticker_clean}.co.id?size=100"
             
-            # WPI Score Removed from Header
             html_header = f"""
             <div class="pro-card">
                 <div class="header-profile">
@@ -594,6 +580,10 @@ else:
                             <div style="color:#C6A87C; font-size:10px; font-weight:600; margin-top:2px;">{s.get('SECTOR', 'Sector Not Available')} • {s.get('INDUSTRY', 'Industry Not Available')}</div>
                         </div>
                     </div>
+                    <div class="score-box">
+                        <div style="font-size:9px; color:#71717A; letter-spacing:1px; text-transform:uppercase; font-weight:700;">WPI Score</div>
+                        <div class="score-value">{s.get('WPI_SCORE', 0):.1f}</div>
+                    </div>
                 </div>
             </div>
             """
@@ -601,45 +591,28 @@ else:
             
             col1, col2 = st.columns([1.5, 1])
             with col1:
-                # Market Maker Flow removed, replaced with purely Fundamentals
                 html_col1 = f"""
                 <div class="pro-card" style="height:100%;">
-                    <div class="card-label">📊 FUNDAMENTAL & VALUATION</div>
+                    <div class="card-label">⚡ SUMMARY STRATEGY & RESULTS%</div>
                     <div style="display:flex; justify-content:space-between; border-bottom: 1px solid #27272A; padding-bottom: 8px;">
-                        <div>
-                            <span class="data-label">VALUATION</span>
-                            <span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="data-label">FREE FLOAT</span>
-                            <span class="data-value" style="font-size:15px; color:#C6A87C;">{s.get('FREE_FLOAT', 0):.1f}%</span>
-                        </div>
+                        <div><span class="data-label">FUNDAMENTAL</span><span class="data-value" style="font-size:12px;">ROE <span style="color:#C6A87C;">{s.get('ROE', 0)}%</span> | PBV <span style="color:#C6A87C;">{pbv}x</span> | YIELD <span style="color:#C6A87C;">{s.get('YIELD', '0%')}</span></span></div>
+                        <div style="text-align:right;"><span class="data-label">MARKET MAKER FLOW</span><span class="data-value" style="font-size:15px; color: {'#10B981' if 'ACCUMULATION' in status_bandar or 'MARK-UP' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</span></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; padding-top: 8px;">
-                        <div>
-                            <span class="data-label">DIVIDEND DATE</span>
-                            <span class="data-value" style="font-size:12px; color:#FAFAFA;">{s.get('DIV_DATE', '-')}</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="data-label">EPS</span>
-                            <span class="data-value" style="font-size:12px; color:#FAFAFA;">{float(s.get('EPS', 0)):,.2f}</span>
-                        </div>
-                    </div>
+                    <div class="meter-container"><div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div></div>
+                    <div class="meter-labels"><span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span></div>
                 </div>
                 """
                 st.markdown(html_col1, unsafe_allow_html=True)
                 
             with col2:
-                # Status Bandar added into Smart Money Box
                 html_col2 = f"""
                 <div class="pro-card" style="height:100%;">
-                    <div class="card-label">🌊 SMART MONEY & MARKET MAKER</div>
+                    <div class="card-label">🌊 SMART MONEY</div>
                     <div style="text-align:center; margin: 4px 0;">
                         <div style="font-size:30px; font-weight:800; color:{'#10B981' if vol > vol_sma else '#A1A1AA'};">{vol/1000000:.1f}M</div>
                         <div class="badge-{'green' if vol > vol_sma else 'red'}" style="display:inline-block; margin-top:4px; font-size:11px; padding:3px 8px;">{'VOLUME SPIKE' if vol > vol_sma else 'VOLUME DRY'}</div>
                     </div>
-                    <div style="text-align:center; font-size:13px; font-weight:800; margin-top:8px; color: {'#10B981' if 'ACCUMULATION' in status_bandar or 'MARK-UP' in status_bandar else '#C6A87C' if 'NEUTRAL' in status_bandar else '#EF4444'};">{status_bandar}</div>
-                    <div style="text-align:center; font-size:11px; font-weight:700; margin-top:6px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">SIG: {serok_sig}</div>
+                    <div style="text-align:center; font-size:11px; font-weight:700; margin-top:8px; border-top: 1px solid #27272A; padding-top:6px; color:#EF4444;">SIG: {serok_sig}</div>
                 </div>
                 """
                 st.markdown(html_col2, unsafe_allow_html=True)
@@ -660,7 +633,7 @@ else:
                     <div><span class="data-label">LAST PRICE</span><span class="data-value">{int(harga):,}</span></div>
                     <div><span class="data-label">VOLATILITY</span><span class="data-value" style="color: {'#EF4444' if volatility_badge == 'HIGH' else '#10B981'};">{volatility_badge}</span></div>
                     <div><span class="data-label">MA20 (EMA)</span><span class="data-value">{int(ma20):,}</span></div>
-                    <div><span class="data-label">MA50 (SMA)</span><span class="data-value">{int(ma50):,}</span></div>
+                    <div><span class="data-label">EPS</span><span class="data-value">{float(s.get('EPS', 0)):,.2f}</span></div>
                 </div>
                 <div style="display:flex; justify-content:space-between; text-align:center; margin-top:12px; border-top:1px dashed #27272A; border-bottom:1px dashed #27272A; padding:8px 0; background: rgba(5,5,5,0.5); border-radius: 6px;">
                     <div style="flex:1; border-right:1px solid #27272A;">
@@ -695,25 +668,16 @@ else:
                 ai_insight = f"Speculative Signal. Detected {status_bandar} at a rebound area. Technical indicators show {serok_sig}. Enter with staggered lots (Speculative Buy) and prepare an averaging strategy if a normal correction occurs."
             else:
                 ai_insight = f"Wait & See. Selling pressure is still dominant or price is stuck in an awkward area ({status_bandar}). Monitor price action until it returns to the Support / Entry Area before making a decision."
-            
-            # WPI Score and Meter added into Master Strategy Box
+                
             master_strategy_box = f"""
             <div class="pro-card" style="border: 2px solid {action_color}; background: linear-gradient(145deg, #18181B, #09090B);">
                 <div class="card-label" style="color: {action_color}; justify-content: space-between;">
                     <span>🛡️ FINAL DECISION CENTER STRATEGY</span>
                     <span>{grade}</span>
                 </div>
-                <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 12px; margin-bottom: 12px; display:flex; justify-content:space-around; align-items:center;">
-                    <div style="text-align:left; border-right:1px solid {action_color}; padding-right:15px;">
-                        <div style="font-size:9px; color:#71717A; text-transform:uppercase; font-weight:700;">WPI SCORE</div>
-                        <div style="font-size:24px; font-weight:800; color:#C6A87C; line-height:1;">{s.get('WPI_SCORE', 0):.1f}</div>
-                    </div>
-                    <div style="color: {action_color}; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; text-align:center; flex:1;">
-                        {action_text}
-                    </div>
+                <div style="background: {action_bg}; border: 1px solid {action_color}; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 12px;">
+                    <div style="color: {action_color}; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">{action_text}</div>
                 </div>
-                <div class="meter-container" style="margin-top:0; margin-bottom:4px;"><div class="meter-fill" style="width: {s.get('WPI_SCORE', 0)}%;"></div></div>
-                <div class="meter-labels" style="margin-bottom:12px;"><span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span></div>
                 <div style="display:flex; justify-content:space-around; align-items:center; background: rgba(5,5,5,0.6); border: 1px solid #27272A; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align:center;">
                     <div>
                         <div style="font-size:9px; color:#71717A; text-transform:uppercase; font-weight:700;">🎯 Entry Area</div>
@@ -895,12 +859,11 @@ else:
                 else:
                     st.markdown("<div style='color:#71717A; font-size:12px; margin-bottom:15px;'>No stocks currently meet the Bottom Fishing criteria.</div>", unsafe_allow_html=True)
                     
-            # 1. Dividend >= 3% dan penambahan Tanggal Dividend
-            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 Dividend Investing (Yield >= 3%)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sop-title' style='margin-top:20px;'>💰 Dividend Investing (Yield >= 2%)</div>", unsafe_allow_html=True)
             if 'YIELD_RAW' in df_all.columns:
-                df_div = df_all[df_all['YIELD_RAW'] >= 3.0].sort_values(by='YIELD_RAW', ascending=False)
+                df_div = df_all[df_all['YIELD_RAW'] >= 2.0].sort_values(by='YIELD_RAW', ascending=False)
                 if not df_div.empty:
-                    cols_div = ['TICKER', 'PRICE', 'YIELD', 'DIV_DATE', 'ROE', 'PBV', 'PER']
+                    cols_div = ['TICKER', 'PRICE', 'YIELD', 'ROE', 'PBV', 'PER']
                     safe_cols_div = [c for c in cols_div if c in df_div.columns]
                     st.dataframe(df_div[safe_cols_div], hide_index=True, use_container_width=True)
                     
@@ -911,15 +874,6 @@ else:
                     cols_bandar = ['TICKER', 'PRICE', 'SMART_MONEY_STATUS', 'WPI_SCORE']
                     safe_cols_bandar = [c for c in cols_bandar if c in df_bandar.columns]
                     st.dataframe(df_bandar[safe_cols_bandar], hide_index=True, use_container_width=True)
-                    
-            # 4. Tambahan Clustering Free Float
-            st.markdown("<div class='sop-title' style='margin-top:20px;'>🪂 Public Free Float (%)</div>", unsafe_allow_html=True)
-            if 'FREE_FLOAT' in df_all.columns:
-                df_float = df_all[df_all['FREE_FLOAT'] > 0].sort_values(by='FREE_FLOAT', ascending=False)
-                if not df_float.empty:
-                    cols_float = ['TICKER', 'PRICE', 'FREE_FLOAT', 'VOLUME', 'SMART_MONEY_STATUS']
-                    safe_cols_float = [c for c in cols_float if c in df_float.columns]
-                    st.dataframe(df_float[safe_cols_float], hide_index=True, use_container_width=True)
         else:
             st.info("Data is empty. Please run a SCAN first.")
 
@@ -930,7 +884,7 @@ else:
         st.markdown("<h4 style='color:#C6A87C; font-size:14px; margin-bottom:15px;'>📥 Export Data to Mobile (Excel/CSV)</h4>", unsafe_allow_html=True)
         df_all = pd.DataFrame(st.session_state.raw_stocks)
         if not df_all.empty:
-            cols_to_export = ['TICKER', 'NAME', 'PRICE', 'VWAP', 'BUY_AREA', 'TRAILING_STOP', 'FIBO_618', 'FIBO_500', 'SETUP_GRADE', 'SEROK_SIGNAL', 'SMART_MONEY_STATUS', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD', 'EPS', 'FREE_FLOAT']
+            cols_to_export = ['TICKER', 'NAME', 'PRICE', 'VWAP', 'BUY_AREA', 'TRAILING_STOP', 'FIBO_618', 'FIBO_500', 'SETUP_GRADE', 'SEROK_SIGNAL', 'SMART_MONEY_STATUS', 'WPI_SCORE', 'ROE', 'PBV', 'YIELD', 'EPS']
             safe_export_cols = [c for c in cols_to_export if c in df_all.columns]
             df_export = df_all[safe_export_cols]
             csv_data = df_export.to_csv(index=False).encode('utf-8')
